@@ -129,6 +129,7 @@ public class User extends Account {
     public void setBudgetStatus(String approved) {
     }
 
+    //get uuid
     public UUID getUuid() {
         return id;
     }
