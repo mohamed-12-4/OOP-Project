@@ -4,6 +4,7 @@ import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.sql.Date;
 import java.text.ParseException;
+import java.util.ArrayList;
 import java.util.UUID;
 
 public class Dashboard extends JFrame {
@@ -57,12 +58,11 @@ public class Dashboard extends JFrame {
         cardsPanel.add(createSummaryCard("Remaining", "$1,800", new Color(255, 184, 77)));
 
         // Recent transactions table
-        String[] columnNames = {"Date", "Category", "Amount", "Description"};
-        Object[][] data = {
-                {"2025-04-01", "Salary", "$3,000", "Monthly salary"},
-                {"2025-04-05", "Rent", "$1,200", "Apartment payment"},
-                {"2025-04-10", "Groceries", "$150", "Weekly shopping"}
-        };
+        String[] columnNames = {"Date", "Category/source", "Amount", "Description", };
+        ArrayList<Transaction> transactionList = Transaction.getTransactions(user.getUuid());
+        System.out.println(transactionList);
+        Object[][] data = transactionList.toArray(new Object[transactionList.size()][]);
+
 
         JTable transactionsTable = new JTable(data, columnNames) {
             @Override

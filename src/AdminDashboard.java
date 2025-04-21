@@ -156,7 +156,7 @@ public class AdminDashboard extends JFrame {
                     user.getName(),
                     user.getEmail(),
 
-                    user.getExpenses(),
+
 
             };
             tableModel.addRow(rowData);

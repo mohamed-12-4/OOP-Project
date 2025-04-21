@@ -37,7 +37,7 @@ public class App extends JFrame {
     private JPanel cardPanel;
     private JPanel dashboardPanel;
     private JPanel budgetViewPanel;
-    private JPanel transactionsViewPanel;
+    private JPanel transactionsViewPanel = new JPanel();
     private JPanel reportsPanel;
     private JPanel goalsPanel;
     private JPanel settingsPanel;
@@ -252,7 +252,7 @@ public class App extends JFrame {
         cardPanel.setBackground(KU_WHITE);
 
         // Create dashboard panel (default view)
-        dashboardPanel = createDashboardPanel();
+        dashboardPanel = createDashboardPanel(user);
         cardPanel.add(dashboardPanel, "Dashboard");
 
         // Create budget view panel
@@ -260,7 +260,7 @@ public class App extends JFrame {
         cardPanel.add(budgetViewPanel, "Budget");
 
         // Create transactions view panel
-        transactionsViewPanel = createTransactionsViewPanel();
+        transactionsViewPanel = createTransactionsViewPanel(user);
         cardPanel.add(transactionsViewPanel, "Transactions");
 
         // Create other view panels (simplified for this example)
@@ -278,7 +278,7 @@ public class App extends JFrame {
         mainPanel.add(cardPanel, BorderLayout.CENTER);
     }
 
-    private JPanel createDashboardPanel() {
+    private JPanel createDashboardPanel(User user) {
         JPanel panel = new JPanel();
         panel.setLayout(new BoxLayout(panel, BoxLayout.Y_AXIS));
         panel.setBackground(KU_WHITE);
@@ -290,7 +290,7 @@ public class App extends JFrame {
         createBudgetPanel();
 
         // Create recent transactions panel
-        createTransactionsPanel();
+        createTransactionsPanel(user.getUuid());
 
         panel.add(summaryPanel);
         panel.add(Box.createRigidArea(new Dimension(0, 20)));
@@ -339,7 +339,7 @@ public class App extends JFrame {
         return panel;
     }
 
-    private JPanel createTransactionsViewPanel() {
+    private JPanel createTransactionsViewPanel(User user) {
         JPanel panel = new JPanel(new BorderLayout());
         panel.setBackground(KU_WHITE);
 
@@ -349,7 +349,7 @@ public class App extends JFrame {
         panel.add(title, BorderLayout.NORTH);
 
         // Add the transactions list from the original dashboard
-        createTransactionsPanel();
+        createTransactionsPanel(user.getUuid());
         panel.add(transactionsPanel, BorderLayout.CENTER);
 
         // Add some additional transaction controls
@@ -372,7 +372,7 @@ public class App extends JFrame {
 
         return panel;
     }
-    public static void createTransactionDialog(JFrame parent, UUID userId) {
+    public void createTransactionDialog(JFrame parent, UUID userId) {
         JPanel panel = new JPanel(new GridBagLayout());
         panel.setBackground(KU_WHITE);
         GridBagConstraints gbc = new GridBagConstraints();
@@ -473,6 +473,8 @@ public class App extends JFrame {
 
                 Transaction tx = new Transaction(userId, type, amount, date, category, source, description);
                 Transaction.addTransaction(tx);
+                this.dispose();
+                new App(new User(userId));
 
                 JOptionPane.showMessageDialog(parent, "Transaction added successfully!", "Success", JOptionPane.INFORMATION_MESSAGE);
             } catch (Exception ex) {
@@ -513,6 +515,23 @@ public class App extends JFrame {
         summaryPanel.add(incomePanel);
         summaryPanel.add(budgetedPanel);
         summaryPanel.add(spentPanel);
+    }
+    private void refreshTransactionList(UUID userId) {
+        transactionsViewPanel.removeAll();
+
+        ArrayList<Transaction> transactions = Transaction.getTransactions(userId);
+        for (Transaction tx : transactions) {
+            String formattedAmount = (tx.getType().equals("income") ? "+" : "-") + "$" + String.format("%.2f", tx.getAmount());
+            String merchant = tx.getType().equals("income") ? tx.getSource() : tx.getDescription();
+            JPanel transactionPanel = createTransactionItem(tx.getDate().toString(), merchant, tx.getCategory(), formattedAmount);
+            transactionsPanel.add(transactionPanel);
+            transactionsPanel.add(Box.createRigidArea(new Dimension(0, 1)));
+            transactionsPanel.add(new JSeparator());
+            transactionsPanel.add(Box.createRigidArea(new Dimension(0, 1)));
+        }
+
+        transactionsViewPanel.revalidate();
+        transactionsViewPanel.repaint();
     }
 
     private JPanel createSummaryCard(String title, double amount, double total, Color accentColor) {
@@ -668,7 +687,7 @@ public class App extends JFrame {
         budgetPanel.add(tableScrollPane, BorderLayout.CENTER);
     }
 
-    private void createTransactionsPanel() {
+    private void createTransactionsPanel(UUID userId) {
         transactionsPanel = new JPanel(new BorderLayout());
         transactionsPanel.setBackground(Color.WHITE);
         transactionsPanel.setBorder(BorderFactory.createCompoundBorder(
@@ -699,17 +718,12 @@ public class App extends JFrame {
         transactionListPanel.setLayout(new BoxLayout(transactionListPanel, BoxLayout.Y_AXIS));
         transactionListPanel.setBackground(Color.WHITE);
 
-        // Sample transaction data
-        String[][] transactions = {
-//                {"March 20, 2025", "Grocery Store", "Food", "-$87.45"},
-//                {"March 18, 2025", "Gas Station", "Transportation", "-$45.30"},
-//                {"March 15, 2025", "Electricity Bill", "Utilities", "-$125.75"},
-//                {"March 15, 2025", "Paycheck", "Income", "+$2,500.00"},
-//                {"March 12, 2025", "Restaurant", "Food", "-$55.20"}
-        };
-
-        for (String[] transaction : transactions) {
-            JPanel transactionPanel = createTransactionItem(transaction[0], transaction[1], transaction[2], transaction[3]);
+        // Load transactions from DB
+        ArrayList<Transaction> transactions = Transaction.getTransactions(userId);
+        for (Transaction tx : transactions) {
+            String formattedAmount = (tx.getType().equals("income") ? "+" : "-") + "$" + String.format("%.2f", tx.getAmount());
+            String merchant = tx.getType().equals("income") ? tx.getSource() : tx.getDescription();
+            JPanel transactionPanel = createTransactionItem(tx.getDate().toString(), merchant, tx.getCategory(), formattedAmount);
             transactionListPanel.add(transactionPanel);
             transactionListPanel.add(Box.createRigidArea(new Dimension(0, 1)));
             transactionListPanel.add(new JSeparator());
@@ -718,6 +732,7 @@ public class App extends JFrame {
 
         // Add components to the transactions panel
         transactionsPanel.add(transactionsHeaderPanel, BorderLayout.NORTH);
+
 
         JScrollPane transactionsScrollPane = new JScrollPane(transactionListPanel);
         transactionsScrollPane.setBorder(BorderFactory.createEmptyBorder());
@@ -777,11 +792,11 @@ public class App extends JFrame {
 
         // Add components to panel
         panel.add(leftPanel, BorderLayout.WEST);
-
         panel.add(rightPanel, BorderLayout.EAST);
 
         return panel;
     }
+
 
 
     private JPanel createSetting() {

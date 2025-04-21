@@ -1,4 +1,6 @@
 import java.sql.*;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.UUID;
 
 public class Transaction {
@@ -68,6 +70,31 @@ public class Transaction {
         } catch (SQLException e) {
             e.printStackTrace();
         }
+    }
+    public static ArrayList<Transaction> getTransactions(UUID userId) {
+        ArrayList<Transaction> transactions = new ArrayList<>();
+
+        try {
+            Connection conn = NeonDBConnection.getConnection();
+            String query = "SELECT * FROM transactions WHERE user_id = ?";
+            PreparedStatement ps = conn.prepareStatement(query);
+            ps.setObject(1, userId);
+            ResultSet rs = ps.executeQuery();
+            while (rs.next()) {
+                String type = rs.getString("type");
+                String date = rs.getString("date");
+                String amount = rs.getString("amount");
+                String description = rs.getString("description");
+                String category = rs.getString("category");
+                String source = rs.getString("source");
+                transactions.add(new Transaction(userId, type, Double.parseDouble(amount), Date.valueOf(date), category, source, description));
+
+            }
+
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return transactions;
     }
 }
 

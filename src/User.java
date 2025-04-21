@@ -8,10 +8,8 @@ public class User extends Account {
     private UUID id;
     private String name, email, address, password;
     private int phoneNum;
-    private List<Income> incomes = new ArrayList<>();
-    private List<Expense> expenses = new ArrayList<>();
+    private List<Transaction> transactions = new ArrayList<>();
     private List<Budget> budgets = new ArrayList<>();
-
 
 
     public User(){
@@ -92,25 +90,11 @@ public class User extends Account {
         this.password = password;
     }
 
+
     public int getPhoneNum() {
         return phoneNum;
     }
 
-    public List<Income> getIncomes() {
-        return incomes;
-    }
-
-    public void setIncomes(List<Income> incomes) {
-        this.incomes = incomes;
-    }
-
-    public List<Expense> getExpenses() {
-        return expenses;
-    }
-
-    public void setExpenses(List<Expense> expenses) {
-        this.expenses = expenses;
-    }
 
     public void setPhoneNum(int phoneNum) {
         this.phoneNum = phoneNum;
