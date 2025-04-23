@@ -52,6 +52,10 @@ public class Transaction {
             ps.setString(6, tx.getSource());
             ps.setString(7, tx.getDescription());
             ps.executeUpdate();
+
+            if ("expense".equalsIgnoreCase(tx.getType())) {
+                Budget.updateActualSpent(tx.getUserId(), tx.getCategory());
+            }
         } catch (SQLException e) {
             e.printStackTrace();
         }

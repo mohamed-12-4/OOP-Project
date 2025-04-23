@@ -6,9 +6,11 @@ import java.awt.event.*;
 import java.io.*;
 import java.text.*;
 import java.util.*;
+import java.util.List;
 import java.util.function.BiFunction;
 
 public class App extends JFrame {
+    private UUID userID;
     // Constants for styling
     private static final Color KU_BLUE = new Color(0, 84, 150); // KU Blue color
     private static final Color KU_GRAY = new Color(62, 62, 62); // Gray color
@@ -58,6 +60,7 @@ public class App extends JFrame {
     private JList<String> transactionsList;
 
     public App(User user) {
+        userID = user.getUuid();
         // Set up the main frame
         setTitle("Budget Planner");
         setSize(1200, 800);
@@ -333,6 +336,8 @@ public class App extends JFrame {
         addButton.setForeground(Color.WHITE);
         addButton.setFocusPainted(false);
 
+        addButton.addActionListener(e -> {showAddBudgetDialog(this, userID);});
+
         controlsPanel.add(addButton);
         panel.add(controlsPanel, BorderLayout.SOUTH);
 
@@ -420,7 +425,7 @@ public class App extends JFrame {
         JLabel dateLabel = new JLabel("Date (YYYY-MM-DD):");
         dateLabel.setFont(NORMAL_FONT);
         dateLabel.setForeground(KU_GRAY);
-        JTextField dateField = new JTextField("2025-04-15", 12);
+        JTextField dateField = new JTextField(12);
         dateField.setFont(NORMAL_FONT);
         panel.add(dateLabel, gbc);
         gbc.gridx = 1;
@@ -431,7 +436,19 @@ public class App extends JFrame {
         JLabel categoryLabel = new JLabel("Category:");
         categoryLabel.setFont(NORMAL_FONT);
         categoryLabel.setForeground(KU_GRAY);
-        JTextField categoryField = new JTextField(12);
+        JComboBox<String> categoryField = new JComboBox<>(new String[]{
+                "Food & Dining",
+                "Shopping",
+                "Transportation",
+                "Housing & Rent",
+                "Utilities",
+                "Health & Medical",
+                "Entertainment",
+                "Education",
+                "Savings & Investments",
+                "Personal Care",
+                "Other"
+        });
         categoryField.setFont(NORMAL_FONT);
         panel.add(categoryLabel, gbc);
         gbc.gridx = 1;
@@ -467,7 +484,7 @@ public class App extends JFrame {
                 String type = (String) typeBox.getSelectedItem();
                 double amount = Double.parseDouble(amountField.getText());
                 java.sql.Date date = java.sql.Date.valueOf(dateField.getText());
-                String category = categoryField.getText();
+                String category = categoryField.getSelectedItem().toString();
                 String source = sourceField.getText();
                 String description = descField.getText();
 
@@ -516,23 +533,7 @@ public class App extends JFrame {
         summaryPanel.add(budgetedPanel);
         summaryPanel.add(spentPanel);
     }
-    private void refreshTransactionList(UUID userId) {
-        transactionsViewPanel.removeAll();
 
-        ArrayList<Transaction> transactions = Transaction.getTransactions(userId);
-        for (Transaction tx : transactions) {
-            String formattedAmount = (tx.getType().equals("income") ? "+" : "-") + "$" + String.format("%.2f", tx.getAmount());
-            String merchant = tx.getType().equals("income") ? tx.getSource() : tx.getDescription();
-            JPanel transactionPanel = createTransactionItem(tx.getDate().toString(), merchant, tx.getCategory(), formattedAmount);
-            transactionsPanel.add(transactionPanel);
-            transactionsPanel.add(Box.createRigidArea(new Dimension(0, 1)));
-            transactionsPanel.add(new JSeparator());
-            transactionsPanel.add(Box.createRigidArea(new Dimension(0, 1)));
-        }
-
-        transactionsViewPanel.revalidate();
-        transactionsViewPanel.repaint();
-    }
 
     private JPanel createSummaryCard(String title, double amount, double total, Color accentColor) {
         JPanel panel = new JPanel();
@@ -607,17 +608,23 @@ public class App extends JFrame {
         // Table column headers
         String[] columnNames = {"Category", "Planned", "Spent", "Remaining", "Progress"};
 
-        // Sample data
-        Object[][] data = {
-//                {"Housing", 1500.00, 1500.00, 0.00, 100.0},
-//                {"Food", 600.00, 450.75, 149.25, 75.1},
-//                {"Transportation", 400.00, 325.50, 74.50, 81.4},
-//                {"Utilities", 300.00, 285.25, 14.75, 95.1},
-//                {"Entertainment", 200.00, 175.00, 25.00, 87.5},
-//                {"Health", 300.00, 0.00, 300.00, 0.0},
-//                {"Personal", 250.00, 50.00, 200.00, 20.0},
-//                {"Savings", 250.00, 250.00, 0.00, 100.0}
-        };
+        ArrayList<Budget> budgets = Budget.getBudgetsForUser(userID);
+        List<Object[]> rowData = new ArrayList<>();
+
+
+
+        for (Budget b : budgets) {
+            double progress = b.getSetAmount() > 0 ? (b.getActualSpent() / b.getSetAmount()) * 100 : 0;
+            rowData.add(new Object[]{
+                    b.getCategory(),
+                    b.getSetAmount(),
+                    b.getActualSpent(),
+                    b.getRemainingAmount(),
+                    progress
+            });
+        }
+        Object[][] data = rowData.toArray(new Object[0][]);
+
 
         // Create a custom table model
         budgetTableModel = new DefaultTableModel(data, columnNames) {
@@ -686,6 +693,93 @@ public class App extends JFrame {
         budgetPanel.add(budgetHeaderPanel, BorderLayout.NORTH);
         budgetPanel.add(tableScrollPane, BorderLayout.CENTER);
     }
+    public static void showAddBudgetDialog(JFrame parent, UUID userId) {
+        JPanel panel = new JPanel(new GridBagLayout());
+        panel.setBackground(KU_WHITE);
+        GridBagConstraints gbc = new GridBagConstraints();
+        gbc.insets = new Insets(12, 12, 12, 12);
+        gbc.anchor = GridBagConstraints.WEST;
+
+        // Title
+        JLabel title = new JLabel("Create New Budget");
+        title.setFont(HEADER_FONT);
+        title.setForeground(KU_BLUE);
+        gbc.gridx = 0;
+        gbc.gridy = 0;
+        gbc.gridwidth = 2;
+        panel.add(title, gbc);
+
+        gbc.gridwidth = 1;
+
+        // Category
+        gbc.gridy++;
+        JLabel categoryLabel = new JLabel("Category:");
+        categoryLabel.setFont(NORMAL_FONT);
+        categoryLabel.setForeground(KU_GRAY);
+        JComboBox<String> categoryBox = new JComboBox<>(new String[]{
+                "Food & Dining",
+                "Shopping",
+                "Transportation",
+                "Housing & Rent",
+                "Utilities",
+                "Health & Medical",
+                "Entertainment",
+                "Education",
+                "Savings & Investments",
+                "Personal Care",
+                "Other"
+        });
+        categoryBox.setFont(NORMAL_FONT);
+        categoryBox.setBackground(KU_LIGHT_BLUE);
+        categoryBox.setForeground(KU_WHITE);
+        categoryBox.setFocusable(false);
+        panel.add(categoryLabel, gbc);
+        gbc.gridx = 1;
+        panel.add(categoryBox, gbc);
+
+        // Amount
+        gbc.gridx = 0;
+        gbc.gridy++;
+        JLabel amountLabel = new JLabel("Budget Amount:");
+        amountLabel.setFont(NORMAL_FONT);
+        amountLabel.setForeground(KU_GRAY);
+        JTextField amountField = new JTextField(12);
+        amountField.setFont(NORMAL_FONT);
+        panel.add(amountLabel, gbc);
+        gbc.gridx = 1;
+        panel.add(amountField, gbc);
+
+        // Show dialog
+        int result = JOptionPane.showConfirmDialog(
+                parent,
+                panel,
+                "Add Budget",
+                JOptionPane.OK_CANCEL_OPTION,
+                JOptionPane.PLAIN_MESSAGE
+        );
+
+        if (result == JOptionPane.OK_OPTION) {
+            try {
+                String category = categoryBox.getSelectedItem().toString();
+                double amount = Double.parseDouble(amountField.getText());
+
+                Budget newBudget = new Budget(userId, category, amount);
+                Budget.addBudget(newBudget);
+
+                JOptionPane.showMessageDialog(parent,
+                        "Budget added successfully!",
+                        "Success",
+                        JOptionPane.INFORMATION_MESSAGE);
+
+            } catch (Exception ex) {
+                JOptionPane.showMessageDialog(parent,
+                        "Failed to add budget:\n" + ex.getMessage(),
+                        "Error",
+                        JOptionPane.ERROR_MESSAGE);
+            }
+        }
+    }
+
 
     private void createTransactionsPanel(UUID userId) {
         transactionsPanel = new JPanel(new BorderLayout());

@@ -3,13 +3,12 @@ import java.util.List;
 import java.util.UUID;
 import java.util.regex.Pattern;
 import java.sql.*;
-class Budget {}
+
 public class User extends Account {
     private UUID id;
     private String name, email, address, password;
     private int phoneNum;
-    private List<Transaction> transactions = new ArrayList<>();
-    private List<Budget> budgets = new ArrayList<>();
+
 
 
     public User(){
@@ -101,14 +100,6 @@ public class User extends Account {
     }
 
 
-    public List<Budget> getBudgets() {
-        return budgets;
-    }
-
-
-    public void setBudgets(List<Budget> budgets) {
-        this.budgets = budgets;
-    }
 
     public void setBudgetStatus(String approved) {
     }
