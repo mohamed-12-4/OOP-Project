@@ -4,7 +4,7 @@ import java.util.List;
 import java.util.UUID;
 
 public class Transaction {
-    private UUID transactionId;
+    private int transactionId;
     private UUID userId;       // Foreign key to the users table
     private String type;       // "income" or "expense"
     private double amount;
@@ -14,9 +14,43 @@ public class Transaction {
     private String description;
 
     public Transaction() {}
+    public Transaction(int txId) {
+        this.transactionId = txId;
+        String query = "SELECT *FROM transactions WHERE id = ?";
+        try (Connection conn = NeonDBConnection.getConnection();
+             PreparedStatement ps = conn.prepareStatement(query)) {
+
+            ps.setObject(1, txId);
+            ResultSet rs = ps.executeQuery();
+            while (rs.next()) {
+                UUID id = UUID.fromString(rs.getString("user_id"));
+                this.userId = id;
+                this.type = rs.getString("type");
+                this.amount = rs.getDouble("amount");
+                this.date = rs.getDate("date");
+                this.category = rs.getString("category");
+                this.source = rs.getString("source");
+                this.description = rs.getString("description");
+
+            }
+
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+
+    }
     // Constructor to create a new Transaction
     public Transaction(UUID userId, String type, double amount, Date date, String category, String source, String description) {
-        this.transactionId = UUID.randomUUID();
+        this.userId = userId;
+        this.type = type;
+        this.amount = amount;
+        this.date = date;
+        this.category = category;
+        this.source = source;
+        this.description = description;
+    }
+    public Transaction(int trxId, UUID userId, String type, double amount, Date date, String category, String source, String description) {
+        this.transactionId = trxId;
         this.userId = userId;
         this.type = type;
         this.amount = amount;
@@ -26,8 +60,45 @@ public class Transaction {
         this.description = description;
     }
 
+    public static double getTotalIncome(UUID id) {
+        double total = 0;
+        String query = "SELECT SUM(amount) FROM transactions WHERE type='income' AND user_id = ?";
+        try (Connection conn = NeonDBConnection.getConnection();
+             PreparedStatement ps = conn.prepareStatement(query)) {
+
+            ps.setObject(1, id);
+            ResultSet rs = ps.executeQuery();
+            while (rs.next()) {
+                total = rs.getDouble(1);
+            }
+
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return total;
+
+    }
+
+    public static double getTotalExpenses(UUID id) {
+        double total = 0;
+        String query = "SELECT SUM(amount) FROM transactions WHERE type='expense' AND user_id = ?" ;
+        try (Connection conn = NeonDBConnection.getConnection();
+             PreparedStatement ps = conn.prepareStatement(query)) {
+
+            ps.setObject(1, id);
+            ResultSet rs = ps.executeQuery();
+            while (rs.next()) {
+                total = rs.getDouble(1);
+            }
+
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return total;
+    }
+
     // Getters
-    public UUID getTransactionId() { return transactionId; }
+    public int getTransactionId() { return transactionId; }
     public UUID getUserId() { return userId; }
     public String getType() { return type; }
     public double getAmount() { return amount; }
@@ -64,13 +135,16 @@ public class Transaction {
 
 
     // Static method to delete a transaction from the 'transactions' table by its transaction_id
-    public static void deleteTransaction(UUID transactionId) {
-        String query = "DELETE FROM transactions WHERE transaction_id = ?";
+    public static void deleteTransaction(Transaction tx) {
+        String query = "DELETE FROM transactions WHERE id = ?";
         try (Connection conn = NeonDBConnection.getConnection();
              PreparedStatement ps = conn.prepareStatement(query)) {
 
-            ps.setObject(1, transactionId);
+            ps.setObject(1, tx.getTransactionId());
             ps.executeUpdate();
+            if ("expense".equalsIgnoreCase(tx.getType())) {
+                Budget.updateActualSpent(tx.getUserId(), tx.getCategory());
+            }
         } catch (SQLException e) {
             e.printStackTrace();
         }
@@ -85,13 +159,41 @@ public class Transaction {
             ps.setObject(1, userId);
             ResultSet rs = ps.executeQuery();
             while (rs.next()) {
+                int transactionId = rs.getInt("id");
                 String type = rs.getString("type");
                 String date = rs.getString("date");
                 String amount = rs.getString("amount");
                 String description = rs.getString("description");
                 String category = rs.getString("category");
                 String source = rs.getString("source");
-                transactions.add(new Transaction(userId, type, Double.parseDouble(amount), Date.valueOf(date), category, source, description));
+                transactions.add(new Transaction(transactionId, userId, type, Double.parseDouble(amount), Date.valueOf(date), category, source, description));
+
+            }
+
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return transactions;
+    }
+    public static ArrayList<Transaction> getAllTransactions() {
+        ArrayList<Transaction> transactions = new ArrayList<>();
+
+        try {
+            Connection conn = NeonDBConnection.getConnection();
+            String query = "SELECT * FROM transactions";
+            PreparedStatement ps = conn.prepareStatement(query);
+
+            ResultSet rs = ps.executeQuery();
+            while (rs.next()) {
+                int transactionId =rs.getInt("id");
+                UUID userId = UUID.fromString(rs.getString("user_id"));
+                String type = rs.getString("type");
+                String date = rs.getString("date");
+                String amount = rs.getString("amount");
+                String description = rs.getString("description");
+                String category = rs.getString("category");
+                String source = rs.getString("source");
+                transactions.add(new Transaction(transactionId, userId, type, Double.parseDouble(amount), Date.valueOf(date), category, source, description));
 
             }
 

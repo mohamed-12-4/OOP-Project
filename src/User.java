@@ -7,7 +7,7 @@ import java.sql.*;
 public class User extends Account {
     private UUID id;
     private String name, email, address, password;
-    private int phoneNum;
+    private String phoneNum;
 
 
 
@@ -27,10 +27,20 @@ public class User extends Account {
                 this.email = rs.getString("email");
                 this.address = rs.getString("address");
                 this.password = rs.getString("password");
-                this.phoneNum = rs.getInt("phone");
+                this.phoneNum = rs.getString("phone");
             }
         }
         catch (SQLException e) {
+            e.printStackTrace();
+        }
+    }
+
+    public static void deleteById(UUID id) {
+        String query = "DELETE FROM users WHERE id = ?";
+        try (Connection conn = NeonDBConnection.getConnection();
+             PreparedStatement ps = conn.prepareStatement(query)) {
+
+        } catch (SQLException e) {
             e.printStackTrace();
         }
     }
@@ -90,12 +100,52 @@ public class User extends Account {
     }
 
 
-    public int getPhoneNum() {
+    public String getPhoneNum() {
         return phoneNum;
     }
 
+    public static ArrayList<User> getAllUsers() {
+        ArrayList<User> users = new ArrayList<>();
+        try {
+            Connection conn = NeonDBConnection.getConnection();
+            String query = "SELECT * FROM users ";
+            PreparedStatement stmt = conn.prepareStatement(query);
 
-    public void setPhoneNum(int phoneNum) {
+            ResultSet rs = stmt.executeQuery();
+            while (rs.next()) {
+                User user = new User(UUID.fromString(rs.getString("id")));
+                users.add(user);
+            }
+        }
+        catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return users;
+    }
+
+    public static int countUsers() {
+        int count = 0;
+        try {
+            Connection conn = NeonDBConnection.getConnection();
+            String query = "SELECT COUNT(*) FROM users ";
+            PreparedStatement stmt = conn.prepareStatement(query);
+            ResultSet rs = stmt.executeQuery();
+            while (rs.next()) {
+                count = rs.getInt(1);
+
+            }
+        }
+        catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return count;
+
+    }
+
+
+
+
+    public void setPhoneNum(String phoneNum) {
         this.phoneNum = phoneNum;
     }
 
@@ -107,5 +157,23 @@ public class User extends Account {
     //get uuid
     public UUID getUuid() {
         return id;
+    }
+
+    public void updateInDB() {
+        String query = "UPDATE users SET name = ?, email = ?, address = ?, phone = ? WHERE id = ?";
+        try (Connection conn = NeonDBConnection.getConnection()){;
+             PreparedStatement ps = conn.prepareStatement(query);
+             ps.setString(1, name);
+             ps.setString(2, email);
+             ps.setString(3, address);
+             ps.setString(4, phoneNum);
+             ps.setObject(5, id);
+
+             ps.executeUpdate();
+
+
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
     }
 }

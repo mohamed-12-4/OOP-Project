@@ -5,6 +5,10 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.FocusEvent;
 import java.awt.event.FocusListener;
+import java.sql.Connection;
+import java.sql.Date;
+import java.sql.PreparedStatement;
+import java.sql.SQLException;
 
 public class SignUp extends JFrame implements ActionListener {
     // Constants for frame dimensions and colors
@@ -352,8 +356,25 @@ public class SignUp extends JFrame implements ActionListener {
             if((email.trim().isEmpty() || email.equals("Email Address")) || (name.trim().isEmpty()|| name.equals("Name")) || (address.trim().isEmpty() || address.equals("Address"))|| (phone.trim().isEmpty()|| phone.equals("Phone")) || (password.trim().isEmpty() || password.equals("Password"))) {
                 error.setVisible(true);
             }
-            // Implement sign-up logic here
-            // Validate inputs, process registration, etc.
+            else {
+                String query = "INSERT INTO users (name, email, phone, address, password, type) " +
+                        "VALUES (?, ?, ?, ?, ?, ?, 'user')";
+                try (Connection conn = NeonDBConnection.getConnection();
+                     PreparedStatement ps = conn.prepareStatement(query)) {
+
+
+                    ps.setString(1, name);
+                    ps.setString(2, email);
+                    ps.setString(3, phone);
+                    ps.setString(4,  address);
+                    ps.setString(5, password);
+                    ps.execute();
+
+
+                } catch (SQLException err) {
+                    err.printStackTrace();
+                }
+            }
         }
     }
 }

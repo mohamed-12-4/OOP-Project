@@ -1,278 +1,454 @@
-//import javax.swing.*;
-//import java.awt.event.ActionEvent;
-//import java.awt.event.ActionListener;
-//
-//public class AdminMainPage extends JFrame implements ActionListener {
-//
-//
-//
-//    public AdminMainPage(){
-//
-//    }
-//
-//    public static void main(String args[]){
-//
-//    }
-//
-//
-//    @Override
-//    public void actionPerformed(ActionEvent e) {
-//
-//    }
-//}
 import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
 import java.awt.*;
-import java.util.ArrayList;
-import java.util.List;
+import java.awt.event.*;
+import java.sql.*;
+import java.sql.Date;
+import java.util.*;
 
 public class AdminDashboard extends JFrame {
+    private CardLayout cardLayout;
+    private JPanel centerPanel;
 
-    // Sample data storage
-    private List<User> users = new ArrayList<>();
+    private DefaultTableModel userTableModel;
     private JTable userTable;
-    private DefaultTableModel tableModel;
+
+    private DefaultTableModel budgetTableModel;
+    private JTable budgetTable;
 
     public AdminDashboard() {
-        setTitle("Admin Dashboard - Budget Management");
+        super("Admin Dashboard - Budget Management");
         setSize(1200, 800);
-        setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        setDefaultCloseOperation(EXIT_ON_CLOSE);
         setLocationRelativeTo(null);
 
-        // Initialize sample data
+        JPanel main = new JPanel(new BorderLayout());
+        main.add(createHeader(), BorderLayout.NORTH);
+        main.add(createSidebar(), BorderLayout.WEST);
+        main.add(createCenterPanel(), BorderLayout.CENTER);
 
-
-        // Create the main panel with a BorderLayout
-        JPanel mainPanel = new JPanel();
-        mainPanel.setLayout(new BorderLayout());
-
-        // Add components to the main panel
-        mainPanel.add(createHeaderPanel(), BorderLayout.NORTH);
-        mainPanel.add(createSidebarPanel(), BorderLayout.WEST);
-        mainPanel.add(createContentPanel(), BorderLayout.CENTER);
-
-        // Add the main panel to the frame
-        add(mainPanel);
-
+        add(main);
         setVisible(true);
     }
 
-    private JPanel createHeaderPanel() {
-        JPanel headerPanel = new JPanel();
-        headerPanel.setBackground(new Color(40, 58, 82)); // Dark blue
-        headerPanel.setPreferredSize(new Dimension(getWidth(), 60));
-
-        JLabel titleLabel = new JLabel("Admin Dashboard");
-        titleLabel.setForeground(Color.WHITE);
-        titleLabel.setFont(new Font("Arial", Font.BOLD, 24));
-
-        headerPanel.add(titleLabel);
-
-        return headerPanel;
+    private JPanel createHeader() {
+        JPanel p = new JPanel();
+        p.setBackground(new Color(40, 58, 82));
+        p.setPreferredSize(new Dimension(getWidth(), 60));
+        JLabel lbl = new JLabel("Admin Dashboard");
+        lbl.setForeground(Color.WHITE);
+        lbl.setFont(new Font("Arial", Font.BOLD, 24));
+        p.add(lbl);
+        return p;
     }
 
-    private JPanel createSidebarPanel() {
-        JPanel sidebarPanel = new JPanel();
-        sidebarPanel.setBackground(new Color(50, 70, 100)); // Darker blue
-        sidebarPanel.setPreferredSize(new Dimension(200, getHeight()));
-        sidebarPanel.setLayout(new BoxLayout(sidebarPanel, BoxLayout.Y_AXIS));
+    private JPanel createSidebar() {
+        JPanel p = new JPanel();
+        p.setBackground(new Color(50, 70, 100));
+        p.setPreferredSize(new Dimension(200, getHeight()));
+        p.setLayout(new BoxLayout(p, BoxLayout.Y_AXIS));
 
-        // Add sidebar buttons
-        String[] menuItems = {"Dashboard", "Users", "Budgets", "Reports", "Settings"};
-        for (String item : menuItems) {
-            JButton button = new JButton(item);
-            button.setAlignmentX(Component.CENTER_ALIGNMENT);
-            button.setForeground(Color.WHITE);
-            button.setBackground(new Color(50, 70, 100));
-            button.setBorderPainted(false);
-            button.setFocusPainted(false);
-            button.setFont(new Font("Arial", Font.PLAIN, 16));
-            button.setPreferredSize(new Dimension(200, 40));
-            button.setMaximumSize(new Dimension(200, 40));
-            sidebarPanel.add(button);
-            sidebarPanel.add(Box.createRigidArea(new Dimension(0, 10)));
+        String[] items = {"Dashboard", "Users", "Budgets", "Transactions", "Reports", "Settings"};
+        for (String name : items) {
+            JButton btn = new JButton(name);
+            btn.setAlignmentX(Component.CENTER_ALIGNMENT);
+            btn.setForeground(Color.WHITE);
+            btn.setBackground(new Color(50, 70, 100));
+            btn.setFont(new Font("Arial", Font.PLAIN, 16));
+            btn.setBorderPainted(false);
+            btn.setFocusPainted(false);
+            btn.setMaximumSize(new Dimension(200, 40));
+            btn.addActionListener(e -> {
+                // Refresh data when switching
+                if ("Users".equals(name)) {
+                    refreshUserTable();
+                } else if ("Budgets".equals(name)) {
+                    refreshBudgetTable();
+                }
+                cardLayout.show(centerPanel, name);
+            });
+            p.add(btn);
+            p.add(Box.createRigidArea(new Dimension(0, 10)));
         }
 
-        return sidebarPanel;
+        return p;
     }
 
-    private JPanel createContentPanel() {
-        JPanel contentPanel = new JPanel();
-        contentPanel.setLayout(new BorderLayout());
 
-        // Add a card for summary
-        JPanel summaryCard = createSummaryCard();
-        contentPanel.add(summaryCard, BorderLayout.NORTH);
+    private JPanel createCenterPanel() {
+        centerPanel = new JPanel();
+        cardLayout = new CardLayout();
+        centerPanel.setLayout(cardLayout);
 
-        // Add the user table
-        JPanel tablePanel = createUserTablePanel();
-        contentPanel.add(tablePanel, BorderLayout.CENTER);
+        centerPanel.add(createDashboardPanel(), "Dashboard");
+        centerPanel.add(createUsersPanel(), "Users");
+        centerPanel.add(createBudgetsPanel(), "Budgets");
+        centerPanel.add(createTransactionsPanel(), "Transactions");
+        centerPanel.add(createPlaceholder("Reports"), "Reports");
+        centerPanel.add(createPlaceholder("Settings"), "Settings");
 
-        // Add action buttons
-        JPanel actionPanel = createActionPanel();
-        contentPanel.add(actionPanel, BorderLayout.SOUTH);
-
-        return contentPanel;
+        return centerPanel;
     }
 
-    private JPanel createSummaryCard() {
-        JPanel summaryCard = new JPanel();
-        summaryCard.setBackground(Color.WHITE);
-        summaryCard.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
-        summaryCard.setLayout(new GridLayout(1, 3, 10, 10));
+    private JPanel createDashboardPanel() {
+        JPanel p = new JPanel(new BorderLayout());
+        p.setBackground(Color.WHITE);
+        p.add(createSummaryPanel(), BorderLayout.NORTH);
+        return p;
+    }
+    private DefaultTableModel transactionsTableModel;
+    private JTable transactionsTable;
 
-        // Add summary items
-        String[] summaries = {"Total Users: 100", "Pending Budgets: 10", "Approved Budgets: 90"};
-        for (String summary : summaries) {
-            JLabel label = new JLabel(summary, SwingConstants.CENTER);
-            label.setFont(new Font("Arial", Font.BOLD, 18));
-            label.setBorder(BorderFactory.createLineBorder(new Color(200, 200, 200), 1));
-            label.setOpaque(true);
-            label.setBackground(new Color(240, 240, 240));
-            summaryCard.add(label);
+    private JPanel createTransactionsPanel() {
+        JPanel p = new JPanel(new BorderLayout());
+        p.setBorder(BorderFactory.createEmptyBorder(20,20,20,20));
+        p.setBackground(Color.WHITE);
+
+        String[] cols = {"Transaction ID", "User ID", "Type", "Amount", "Date", "Category", "Source", "Description"};
+        transactionsTableModel = new DefaultTableModel(cols, 0) {
+            @Override
+            public boolean isCellEditable(int row, int column) {
+                return false;
+            }
+        };
+        transactionsTable = new JTable(transactionsTableModel);
+        transactionsTable.setRowHeight(30);
+        transactionsTable.setFont(new Font("Arial", Font.PLAIN, 14));
+
+        refreshTransactionsTable();
+
+        JButton deleteTransactionBtn = makeButton("Delete Transaction", new Color(220, 53, 69));
+        deleteTransactionBtn.addActionListener(e -> deleteTransaction());
+
+        p.add(new JScrollPane(transactionsTable), BorderLayout.CENTER);
+        p.add(deleteTransactionBtn, BorderLayout.SOUTH);
+
+        return p;
+    }
+    private void refreshTransactionsTable() {
+        transactionsTableModel.setRowCount(0);
+        for (Transaction tx : Transaction.getAllTransactions()) {
+            transactionsTableModel.addRow(new Object[]{
+                    String.valueOf(tx.getTransactionId()),
+                    tx.getUserId().toString(),
+                    tx.getType(),
+                    tx.getAmount(),
+                    tx.getDate().toString(),
+                    tx.getCategory(),
+                    tx.getSource(),
+                    tx.getDescription()
+            });
+        }
+    }
+    private void deleteTransaction() {
+        int row = transactionsTable.getSelectedRow();
+        if (row < 0) {
+            JOptionPane.showMessageDialog(this, "Select a transaction to delete.");
+            return;
+        }
+        int txId = Integer.parseInt( (String) transactionsTableModel.getValueAt(row, 0));
+        Transaction tx = new Transaction(txId);
+
+        int confirm = JOptionPane.showConfirmDialog(this, "Are you sure you want to delete this transaction?", "Confirm Delete", JOptionPane.YES_NO_OPTION);
+        if (confirm == JOptionPane.YES_OPTION) {
+            Transaction.deleteTransaction(tx);
+            refreshTransactionsTable();
+            refreshUserTable();
+            refreshBudgetTable();  // Deleting expense could affect budgets!
+        }
+    }
+
+
+
+
+    private JPanel createSummaryPanel() {
+        JPanel p = new JPanel(new GridLayout(1, 3, 10, 10));
+        p.setBorder(BorderFactory.createEmptyBorder(20, 20, 20, 20));
+        p.setBackground(Color.WHITE);
+
+        JLabel totalUsers = new JLabel("Total Users: " + User.countUsers(), SwingConstants.CENTER);
+        JLabel pendingBudgets = new JLabel("Pending Budgets: " + Budget.countByApproval("Pending"), SwingConstants.CENTER);
+        JLabel approvedBudgets = new JLabel("Approved Budgets: " + Budget.countByApproval("Approved"), SwingConstants.CENTER);
+
+        for (JLabel lbl : Arrays.asList(totalUsers, pendingBudgets, approvedBudgets)) {
+            lbl.setFont(new Font("Arial", Font.BOLD, 18));
+            lbl.setOpaque(true);
+            lbl.setBackground(new Color(240, 240, 240));
+            lbl.setBorder(BorderFactory.createLineBorder(new Color(200, 200, 200)));
+            p.add(lbl);
         }
 
-        return summaryCard;
+        return p;
     }
 
-    private JPanel createUserTablePanel() {
-        JPanel tablePanel = new JPanel();
-        tablePanel.setLayout(new BorderLayout());
+    private JPanel createUsersPanel() {
+        JPanel p = new JPanel(new BorderLayout());
+        p.setBorder(BorderFactory.createEmptyBorder(20, 20, 20, 20));
+        p.setBackground(Color.WHITE);
 
-        // Column names for the table
-        String[] columnNames = {"User ID", "Name", "Email", "Income", "Expenses", "Budget Status"};
-
-        // Table model
-        tableModel = new DefaultTableModel(columnNames, 0);
-        userTable = new JTable(tableModel);
-        userTable.setFillsViewportHeight(true);
+        String[] cols = {"User ID", "Name", "Email", "Income", "Expenses", "Budget Status", "Approval Status"};
+        userTableModel = new DefaultTableModel(cols, 0) {
+            @Override
+            public Class<?> getColumnClass(int column) {
+                if (column == 3 || column == 4) return Double.class;
+                return String.class;
+            }
+            @Override
+            public boolean isCellEditable(int row, int column) { return false; }
+        };
+        userTable = new JTable(userTableModel);
         userTable.setRowHeight(30);
         userTable.setFont(new Font("Arial", Font.PLAIN, 14));
 
-        // Populate table with sample data
-        for (User user : users) {
-            Object[] rowData = {
-                    user.getId(),
-                    user.getName(),
-                    user.getEmail(),
-
-
-
-            };
-            tableModel.addRow(rowData);
-        }
-
-        JScrollPane scrollPane = new JScrollPane(userTable);
-        tablePanel.add(scrollPane, BorderLayout.CENTER);
-
-        return tablePanel;
+        refreshUserTable();
+        p.add(new JScrollPane(userTable), BorderLayout.CENTER);
+        p.add(createUserActionPanel(), BorderLayout.SOUTH);
+        return p;
     }
 
-    private JPanel createActionPanel() {
-        JPanel actionPanel = new JPanel();
-        actionPanel.setBackground(Color.WHITE);
-        actionPanel.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
-        actionPanel.setLayout(new FlowLayout(FlowLayout.CENTER, 10, 10));
-
-        // Buttons for actions
-        JButton approveButton = createButton("Approve", new Color(40, 167, 69)); // Green
-        JButton rejectButton = createButton("Reject", new Color(220, 53, 69)); // Red
-        JButton editButton = createButton("Edit", new Color(255, 193, 7)); // Yellow
-        JButton deleteButton = createButton("Delete", new Color(108, 117, 125)); // Gray
-        JButton searchButton = createButton("Search", new Color(0, 123, 255)); // Blue
-
-        // Add action listeners
-        approveButton.addActionListener(e -> approveBudget());
-        rejectButton.addActionListener(e -> rejectBudget());
-        editButton.addActionListener(e -> editUser());
-        deleteButton.addActionListener(e -> deleteUser());
-        searchButton.addActionListener(e -> searchUser());
-
-        // Add buttons to the panel
-        actionPanel.add(approveButton);
-        actionPanel.add(rejectButton);
-        actionPanel.add(editButton);
-        actionPanel.add(deleteButton);
-        actionPanel.add(searchButton);
-
-        return actionPanel;
-    }
-
-    private JButton createButton(String text, Color color) {
-        JButton button = new JButton(text);
-        button.setBackground(color);
-        button.setForeground(Color.WHITE);
-        button.setFont(new Font("Arial", Font.BOLD, 14));
-        button.setFocusPainted(false);
-        button.setBorderPainted(false);
-        button.setPreferredSize(new Dimension(100, 40));
-        return button;
-    }
-
-    private void approveBudget() {
-        int selectedRow = userTable.getSelectedRow();
-        if (selectedRow >= 0) {
-            users.get(selectedRow).setBudgetStatus("Approved");
-            tableModel.setValueAt("Approved", selectedRow, 5);
-        } else {
-            JOptionPane.showMessageDialog(this, "Please select a user to approve.");
+    private void refreshUserTable() {
+        userTableModel.setRowCount(0);
+        for (User u : User.getAllUsers()) {
+            UUID id = u.getUuid();
+            double income = Transaction.getTotalIncome(id);
+            double expense = Transaction.getTotalExpenses(id);
+            String status = "Under Budget";
+            String approvalStatus = "Approved";
+            for (Budget b : Budget.getBudgetsForUser(id)) {
+                if ("Over Budget".equals(b.getStatus())) { status = "Over Budget"; }
+                if ("Rejected".equals(b.getApprovalStatus())) { approvalStatus = "Pending"; }
+            }
+            userTableModel.addRow(new Object[]{
+                    id.toString(),
+                    u.getName(),
+                    u.getEmail(),
+                    income,
+                    expense,
+                    status,
+                    approvalStatus
+            });
         }
     }
 
-    private void rejectBudget() {
-        int selectedRow = userTable.getSelectedRow();
-        if (selectedRow >= 0) {
-            users.get(selectedRow).setBudgetStatus("Rejected");
-            tableModel.setValueAt("Rejected", selectedRow, 5);
-        } else {
-            JOptionPane.showMessageDialog(this, "Please select a user to reject.");
+    private JPanel createUserActionPanel() {
+        JPanel p = new JPanel(new FlowLayout(FlowLayout.CENTER, 10, 10));
+        p.setBackground(Color.WHITE);
+
+        JButton approve = makeButton("Approve", new Color(40, 167, 69));
+        JButton reject  = makeButton("Reject",  new Color(220, 53, 69));
+        JButton edit    = makeButton("Edit",    new Color(255, 193, 7));
+        JButton del     = makeButton("Delete",  new Color(108, 117, 125));
+        JButton search  = makeButton("Search",  new Color(0, 123, 255));
+        JButton addTransaction = makeButton("+ Transaction", new Color(0, 204, 102));
+        JButton addBudget = makeButton("+ Budget", new Color(102, 153, 255));
+
+        approve.addActionListener(e -> changeApproval("Approved"));
+        reject .addActionListener(e -> changeApproval("Rejected"));
+        edit   .addActionListener(e -> editUser());
+        del    .addActionListener(e -> deleteUser());
+        search .addActionListener(e -> searchUser());
+        addTransaction.addActionListener(e -> openAddTransactionDialog());
+        addBudget.addActionListener(e -> openAddBudgetDialog());
+
+
+
+
+        for (JButton b : Arrays.asList(approve, reject, edit, del, search, addTransaction, addBudget)) {
+            p.add(b);
         }
+        return p;
+    }
+
+    private void openAddTransactionDialog() {
+        int row = userTable.getSelectedRow();
+        if (row < 0) { JOptionPane.showMessageDialog(this, "Select a user."); return; }
+        UUID userId = UUID.fromString((String) userTable.getValueAt(row, 0));
+
+        JPanel panel = new JPanel(new GridLayout(0, 2, 10, 10));
+        panel.setBackground(Color.WHITE);
+
+        String[] types = {"income", "expense"};
+        JComboBox<String> typeBox = new JComboBox<>(types);
+        JTextField amountField = new JTextField();
+        JTextField dateField = new JTextField("YYYY-MM-DD");
+        JTextField categoryField = new JTextField();
+        JTextField descriptionField = new JTextField();
+        JTextField sourceField = new JTextField();
+
+        panel.add(new JLabel("Type:"));
+        panel.add(typeBox);
+        panel.add(new JLabel("Amount:"));
+        panel.add(amountField);
+        panel.add(new JLabel("Date:"));
+        panel.add(dateField);
+        panel.add(new JLabel("Category:"));
+        panel.add(categoryField);
+        panel.add(new JLabel("Source:"));
+        panel.add(sourceField);
+        panel.add(new JLabel("Description:"));
+        panel.add(descriptionField);
+
+        int result = JOptionPane.showConfirmDialog(this, panel, "Add Transaction", JOptionPane.OK_CANCEL_OPTION);
+        if (result == JOptionPane.OK_OPTION) {
+            try {
+                Transaction tx = new Transaction(
+                        userId,
+                        typeBox.getSelectedItem().toString(),
+                        Double.parseDouble(amountField.getText()),
+                        Date.valueOf(dateField.getText()),
+                        categoryField.getText(),
+                        sourceField.getText(),
+                        descriptionField.getText()
+                );
+                Transaction.addTransaction(tx);
+                JOptionPane.showMessageDialog(this, "Transaction added successfully.");
+                refreshUserTable();
+                refreshBudgetTable();  // Expense might affect budget!
+            } catch (Exception e) {
+                JOptionPane.showMessageDialog(this, "Invalid input: " + e.getMessage());
+            }
+        }
+    }
+
+    private void openAddBudgetDialog() {
+        int row = userTable.getSelectedRow();
+        if (row < 0) { JOptionPane.showMessageDialog(this, "Select a user."); return; }
+        UUID userId = UUID.fromString((String) userTable.getValueAt(row, 0));
+
+        JPanel panel = new JPanel(new GridLayout(0, 2, 10, 10));
+        panel.setBackground(Color.WHITE);
+
+        JTextField categoryField = new JTextField();
+        JTextField setAmountField = new JTextField();
+
+        panel.add(new JLabel("Category:"));
+        panel.add(categoryField);
+        panel.add(new JLabel("Set Amount:"));
+        panel.add(setAmountField);
+
+        int result = JOptionPane.showConfirmDialog(this, panel, "Add Budget", JOptionPane.OK_CANCEL_OPTION);
+        if (result == JOptionPane.OK_OPTION) {
+            try {
+                Budget budget = new Budget(userId, categoryField.getText(), Double.parseDouble(setAmountField.getText()));
+                Budget.addBudget(budget);
+                JOptionPane.showMessageDialog(this, "Budget added successfully.");
+                refreshBudgetTable();
+            } catch (Exception e) {
+                JOptionPane.showMessageDialog(this, "Invalid input: " + e.getMessage());
+            }
+        }
+    }
+
+
+    private JPanel createBudgetsPanel() {
+        JPanel p = new JPanel(new BorderLayout());
+        p.setBorder(BorderFactory.createEmptyBorder(20,20,20,20));
+        p.setBackground(Color.WHITE);
+
+        String[] cols = {"User ID","Category","Planned","Spent","Remaining","Budget Status","Approval Status"};
+        budgetTableModel = new DefaultTableModel(cols, 0) {
+            @Override
+            public Class<?> getColumnClass(int column) {
+                if (column >= 2 && column <= 4) return Double.class;
+                return String.class;
+            }
+            @Override
+            public boolean isCellEditable(int row, int column) { return false; }
+        };
+        budgetTable = new JTable(budgetTableModel);
+        budgetTable.setRowHeight(30);
+        budgetTable.setFont(new Font("Arial", Font.PLAIN, 14));
+
+        refreshBudgetTable();
+        p.add(new JScrollPane(budgetTable), BorderLayout.CENTER);
+        return p;
+    }
+
+    private void refreshBudgetTable() {
+        budgetTableModel.setRowCount(0);
+        for (Budget b : Budget.getAllBudgets()) {
+            budgetTableModel.addRow(new Object[]{
+                    b.getUserId().toString(),
+                    b.getCategory(),
+                    b.getSetAmount(),
+                    b.getActualSpent(),
+                    b.getRemainingAmount(),
+                    b.getStatus(),
+                    b.getApprovalStatus()
+            });
+        }
+    }
+
+    private JPanel createPlaceholder(String name) {
+        JPanel p = new JPanel();
+        p.add(new JLabel(name + " page coming soon"));
+        return p;
+    }
+
+    private void changeApproval(String status) {
+        int row = userTable.getSelectedRow();
+        if (row < 0) { JOptionPane.showMessageDialog(this, "Select a user."); return; }
+        UUID id = UUID.fromString((String)userTable.getValueAt(row, 0));
+        Budget.setApprovalStatusForUser(id, status);
+        refreshUserTable();
+        refreshBudgetTable();
     }
 
     private void editUser() {
-        int selectedRow = userTable.getSelectedRow();
-        if (selectedRow >= 0) {
-            User user = users.get(selectedRow);
-            String newName = JOptionPane.showInputDialog(this, "Edit Name:", user.getName());
-            String newEmail = JOptionPane.showInputDialog(this, "Edit Email:", user.getEmail());
-            if (newName != null && newEmail != null) {
-                user.setName(newName);
-                user.setEmail(newEmail);
-                tableModel.setValueAt(newName, selectedRow, 1);
-                tableModel.setValueAt(newEmail, selectedRow, 2);
-            }
-        } else {
-            JOptionPane.showMessageDialog(this, "Please select a user to edit.");
+        int row = userTable.getSelectedRow();
+        if (row < 0) { JOptionPane.showMessageDialog(this, "Select a user."); return; }
+        UUID id = UUID.fromString((String)userTable.getValueAt(row, 0));
+        User u = new User(id);
+        String newName  = JOptionPane.showInputDialog(this, "Name:",  u.getName());
+        String newEmail = JOptionPane.showInputDialog(this, "Email:", u.getEmail());
+        String newAddress = JOptionPane.showInputDialog(this, "Address:", u.getAddress());
+        String newPhone = JOptionPane.showInputDialog(this, "Phone Number", u.getPhoneNum());
+        if (newName != null && newEmail != null) {
+            u.setName(newName);
+            u.setEmail(newEmail);
+            u.setAddress(newAddress);
+            u.setPhoneNum(newPhone);
+            u.updateInDB();
+            refreshUserTable();
         }
     }
 
     private void deleteUser() {
-        int selectedRow = userTable.getSelectedRow();
-        if (selectedRow >= 0) {
-            users.remove(selectedRow);
-            tableModel.removeRow(selectedRow);
-        } else {
-            JOptionPane.showMessageDialog(this, "Please select a user to delete.");
+        int row = userTable.getSelectedRow();
+        if (row < 0) { JOptionPane.showMessageDialog(this, "Select a user."); return; }
+        UUID id = UUID.fromString((String)userTable.getValueAt(row, 0));
+        if (JOptionPane.showConfirmDialog(
+                this, "Delete this user?", "Confirm", JOptionPane.YES_NO_OPTION) == JOptionPane.YES_OPTION) {
+            User.deleteById(id);
+            refreshUserTable();
         }
     }
 
     private void searchUser() {
-        String searchTerm = JOptionPane.showInputDialog(this, "Enter name or budget status:");
-        if (searchTerm != null) {
-            for (int i = 0; i < tableModel.getRowCount(); i++) {
-                String name = (String) tableModel.getValueAt(i, 1);
-                String status = (String) tableModel.getValueAt(i, 5);
-                if (name.contains(searchTerm) || status.contains(searchTerm)) {
-                    userTable.setRowSelectionInterval(i, i);
-                    break;
-                }
+        String term = JOptionPane.showInputDialog(this, "Name or status:");
+        if (term == null) return;
+        for (int i = 0; i < userTableModel.getRowCount(); i++) {
+            String name = (String)userTableModel.getValueAt(i, 1);
+            String status = userTableModel.getValueAt(i, 5).toString();
+            if (name.contains(term) || status.contains(term)) {
+                userTable.setRowSelectionInterval(i, i);
+                return;
             }
         }
+        JOptionPane.showMessageDialog(this, "No match found.");
     }
 
+    private JButton makeButton(String txt, Color bg) {
+        JButton b = new JButton(txt);
+        b.setBackground(bg);
+        b.setForeground(Color.WHITE);
+        b.setFont(new Font("Arial", Font.BOLD, 14));
+        b.setFocusPainted(false);
+        b.setPreferredSize(new Dimension(100, 40));
+        return b;
+    }
 
     public static void main(String[] args) {
-        SwingUtilities.invokeLater(() -> new AdminDashboard());
+        SwingUtilities.invokeLater(AdminDashboard::new);
     }
 }
-

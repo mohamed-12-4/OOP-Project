@@ -11,6 +11,31 @@ public class Budget {
     private double actualSpent;
     private double remainingAmount;
     private String status;
+    private String approvalStatus;
+    public Budget(UUID budgetId) {
+        try {
+            Connection conn = NeonDBConnection.getConnection();
+            String query = "SELECT * FROM budget WHERE budget_id = ?";
+            PreparedStatement stmt = conn.prepareStatement(query);
+            stmt.setObject(1, budgetId);
+
+            ResultSet rs = stmt.executeQuery();
+            while (rs.next()) {
+                budgetId = UUID.fromString(rs.getString("budget_id"));
+                userId = UUID.fromString(rs.getString("user_id"));
+                category = rs.getString("category");
+                setAmount = rs.getDouble("set_amount");
+                actualSpent = rs.getDouble("actual_spent");
+                remainingAmount = rs.getDouble("remaining_amount");
+                status = rs.getString("status");
+                approvalStatus = rs.getString("pending");
+
+            }
+        }
+        catch (SQLException e) {
+            e.printStackTrace();
+        }
+    }
 
     public Budget(UUID userId, String category, double setAmount) {
         this.budgetId = UUID.randomUUID();
@@ -22,6 +47,59 @@ public class Budget {
         this.status = "Under Budget";
     }
 
+    public static List<Budget> getAllBudgets() {
+        List<Budget> budgets = new ArrayList<>();
+        try {
+            Connection conn = NeonDBConnection.getConnection();
+            String query = "SELECT * FROM budget";
+            PreparedStatement stmt = conn.prepareStatement(query);
+
+            ResultSet rs = stmt.executeQuery();
+            while (rs.next()) {
+                UUID budgetId = UUID.fromString(rs.getString("budget_id"));
+
+                Budget budget = new Budget(budgetId);
+                budgets.add(budget);
+            }
+        }
+        catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return budgets;
+
+    }
+
+    public static int countByApproval(String pending) {
+        int count = 0;
+        try {
+            Connection conn = NeonDBConnection.getConnection();
+            String query = "SELECT COUNT(*) FROM budget WHERE pending = '" + pending + "'";
+            PreparedStatement stmt = conn.prepareStatement(query);
+
+            ResultSet rs = stmt.executeQuery();
+            while (rs.next()) {
+                count = rs.getInt(1);
+            }
+        }
+        catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return count;
+    }
+
+    public static void setApprovalStatusForUser(UUID userId, String newStatus) {
+        String query = "UPDATE budget SET pending = '" + newStatus + "' WHERE user_Id = '" + userId + "'";
+        try (Connection conn = NeonDBConnection.getConnection();
+             PreparedStatement ps = conn.prepareStatement(query)) {
+
+            ps.executeUpdate();
+
+
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+    }
+
     public UUID getBudgetId() { return budgetId; }
     public UUID getUserId() { return userId; }
     public String getCategory() { return category; }
@@ -29,6 +107,7 @@ public class Budget {
     public double getActualSpent() { return actualSpent; }
     public double getRemainingAmount() { return remainingAmount; }
     public String getStatus() { return status; }
+    public String getApprovalStatus() { return approvalStatus; }
 
 
     private void updateRemainingAndStatus() {
@@ -38,8 +117,8 @@ public class Budget {
 
     // Add new budget
     public static void addBudget(Budget b) {
-        String query = "INSERT INTO budget (budget_id, user_id, category, set_amount, actual_spent, remaining_amount, status) " +
-                "VALUES (?, ?, ?, ?, ?, ?, ?)";
+        String query = "INSERT INTO budget (budget_id, user_id, category, set_amount, actual_spent, remaining_amount, status, pending) " +
+                "VALUES (?, ?, ?, ?, ?, ?, ?, 'Pending')";
         try (Connection conn = NeonDBConnection.getConnection();
              PreparedStatement ps = conn.prepareStatement(query)) {
             ps.setObject(1, b.getBudgetId());
