@@ -2,6 +2,9 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 import java.util.regex.Pattern;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.io.PrintWriter;
 import java.sql.*;
 
 public class User extends Account {
@@ -42,6 +45,36 @@ public class User extends Account {
 
         } catch (SQLException e) {
             e.printStackTrace();
+        }
+    }
+
+     public void progressReport() {
+        String fileName = this.id + "Report.txt"; 
+        try (PrintWriter writer = new PrintWriter(new FileWriter(fileName))) {
+            writer.println("Progress Report for User: " + getEmail());
+            writer.println("User ID: " + this.id);
+            writer.println("Total Transcation: " + Transaction.getAllTransactions().size());
+            writer.println("\nUser Transaction:");
+            StringBuilder income = new StringBuilder("Income: \n");
+            StringBuilder expense = new StringBuilder("Income: \n");
+
+            
+            for(Transaction trans: Transaction.getAllTransactions()){
+                if (trans.getType().toLowerCase().equals("income")) {
+                    income.append(trans + "\n");
+                } else{
+                    expense.append(trans + "\n");
+
+                }
+                
+            }
+    
+            writer.println(income);
+            writer.println(expense);
+            writer.println("\nThank you for using the KU Budget!");
+            System.out.println("Progress report saved as: " + fileName); 
+        } catch (IOException e) {
+            System.err.println("Error generating progress report: " + e.getMessage());
         }
     }
 
