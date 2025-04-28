@@ -49,15 +49,17 @@ public class App extends JFrame {
     private double plannedExpenses = 0;
     private double actualExpenses = 0;
 
+    private DefaultListModel<String> reportsListModel;
+    private JList<String> reportsList;
+
+
     private DecimalFormat currencyFormat = new DecimalFormat("$#,##0.00");
 
     // Budget table data
     private DefaultTableModel budgetTableModel;
     private JTable budgetTable;
 
-    // Transactions data
-    private DefaultListModel<String> transactionsListModel;
-    private JList<String> transactionsList;
+
 
     public App(User user) {
         userID = user.getUuid();
@@ -268,7 +270,7 @@ public class App extends JFrame {
 
         // Create other view panels (simplified for this example)
         reportsPanel = createPlaceholderPanel("Reports View");
-        cardPanel.add(reportsPanel, "Reports");
+        cardPanel.add(createReportsPanel(user), "Reports");
 
         goalsPanel = createPlaceholderPanel("Goals View");
         cardPanel.add(goalsPanel, "Goals");
@@ -578,6 +580,89 @@ public class App extends JFrame {
 
         return panel;
     }
+
+    private void openSelectedReport(User user) {
+        String selected = reportsList.getSelectedValue();
+        if (selected == null) {
+            JOptionPane.showMessageDialog(this, "Select a report to open.");
+            return;
+        }
+        try {
+            File reportFile = new File("reports/" + user.getUuid() + "/" + selected);
+            if (!reportFile.exists()) {
+                JOptionPane.showMessageDialog(this, "File not found.");
+                return;
+            }
+            Desktop.getDesktop().open(reportFile);
+        } catch (Exception e) {
+            e.printStackTrace();
+            JOptionPane.showMessageDialog(this, "Failed to open report: " + e.getMessage());
+        }
+    }
+
+
+
+
+    private JPanel createReportsPanel(User user) {
+        JPanel panel = new JPanel(new BorderLayout());
+        panel.setBackground(Color.WHITE);
+        panel.setBorder(BorderFactory.createEmptyBorder(20, 20, 20, 20));
+
+        // Top: Generate button
+        JButton generateBtn = new JButton("Generate New Report");
+        generateBtn.setBackground(new Color(0, 123, 255));
+        generateBtn.setForeground(Color.WHITE);
+        generateBtn.setFont(new Font("Arial", Font.BOLD, 14));
+        generateBtn.setFocusPainted(false);
+
+        generateBtn.addActionListener(e -> {
+            user.progressReport();  // 🔥 existing method to generate the report
+            refreshReportsList(user); // Refresh the report list
+        });
+
+
+
+
+        panel.add(generateBtn, BorderLayout.NORTH);
+
+        // Center: List of reports
+        reportsListModel = new DefaultListModel<>();
+        reportsList = new JList<>(reportsListModel);
+        reportsList.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
+        reportsList.setFont(new Font("Arial", Font.PLAIN, 14));
+        JScrollPane scrollPane = new JScrollPane(reportsList);
+        panel.add(scrollPane, BorderLayout.CENTER);
+
+        // Bottom: Open button
+        JButton openBtn = new JButton("Open Report");
+        openBtn.setBackground(new Color(40, 167, 69));
+        openBtn.setForeground(Color.WHITE);
+        openBtn.setFont(new Font("Arial", Font.BOLD, 14));
+        openBtn.setFocusPainted(false);
+
+        openBtn.addActionListener(e -> openSelectedReport(user));
+        panel.add(openBtn, BorderLayout.SOUTH);
+
+        refreshReportsList(user); // Load initially
+
+        return panel;
+    }
+
+    private void refreshReportsList(User user) {
+        reportsListModel.clear();
+        File reportsDir = new File("reports/" + user.getUuid()); // Assuming reports are saved per user in a folder
+        if (reportsDir.exists() && reportsDir.isDirectory()) {
+            for (File report : reportsDir.listFiles()) {
+                if (report.getName().endsWith(".txt")) {
+                    reportsListModel.addElement(report.getName());
+                }
+            }
+        }
+    }
+
+
+
+
 
     private void createBudgetPanel() {
         budgetPanel = new JPanel(new BorderLayout());

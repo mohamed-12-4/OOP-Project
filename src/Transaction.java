@@ -202,6 +202,13 @@ public class Transaction {
         }
         return transactions;
     }
+
+    public String toString() {
+        if (type == "expense") {
+            return String.format("Transcation ID: %d \t TransactionType: %s \n Transaction Amount: %.1f \n Transaction Source/Income: %s", transactionId, type, amount, category);
+        }
+        return String.format("Transcation ID: %d \t TransactionType: %s \n Transaction Amount: %.1f \n Transaction Source/Income: %s", transactionId, type, amount, source);
+    }
 }
 
 class Income extends Transaction {}
