@@ -450,7 +450,7 @@ public class AdminDashboard extends JFrame {
             actionPanel.add(btn);
         }
 
-        p.add(actionPanel, BorderLayout.SOUTH); // ✅ Add action panel to bottom
+        p.add(actionPanel, BorderLayout.SOUTH);
 
         return p;
     }
