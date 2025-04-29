@@ -45,7 +45,6 @@ public class App extends JFrame {
     private JPanel budgetViewPanel;
     private JPanel transactionsViewPanel = new JPanel();
     private JPanel reportsPanel;
-    private JPanel goalsPanel;
     private JPanel settingsPanel;
 
     // Model data
@@ -104,7 +103,7 @@ public class App extends JFrame {
         logoLabel.setAlignmentX(Component.LEFT_ALIGNMENT);
 
         // Navigation menu items
-        String[] menuItems = {"Dashboard", "Budget", "Transactions", "Reports", "Goals", "Settings"};
+        String[] menuItems = {"Dashboard", "Budget", "Transactions", "Reports", "Settings"};
         JPanel menuPanel = new JPanel();
         menuPanel.setLayout(new BoxLayout(menuPanel, BoxLayout.Y_AXIS));
         menuPanel.setBackground(Color.WHITE);
@@ -274,8 +273,7 @@ public class App extends JFrame {
         reportsPanel = createPlaceholderPanel("Reports View");
         cardPanel.add(createReportsPanel(user), "Reports");
 
-        goalsPanel = createPlaceholderPanel("Goals View");
-        cardPanel.add(goalsPanel, "Goals");
+        
 
         settingsPanel = createSetting();
         cardPanel.add(settingsPanel, "Settings");
@@ -1087,103 +1085,163 @@ public class App extends JFrame {
         transactionsPanel.repaint();
     }
 
+// SECURITY WARNING: This code shows passwords in plain text - NOT recommended for production use
+private JPanel createSetting() {
+    User currentUser = new User(userID);  // assumes constructor loads from DB
 
-    private JPanel createSetting() {
-        // Main panel with BorderLayout
-        JPanel setting = new JPanel(new BorderLayout());
+    // Main panel with BorderLayout
+    JPanel setting = new JPanel(new BorderLayout());
 
-        // Scroll pane setup
-        JPanel contentPanel = new JPanel();
-        contentPanel.setLayout(new BoxLayout(contentPanel, BoxLayout.Y_AXIS));
-        contentPanel.setBackground(KU_WHITE);
+    // Scroll pane setup
+    JPanel contentPanel = new JPanel();
+    contentPanel.setLayout(new BoxLayout(contentPanel, BoxLayout.Y_AXIS));
+    contentPanel.setBackground(KU_WHITE);
 
-        JScrollPane scrollPane = new JScrollPane(contentPanel);
-        scrollPane.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED);
-        scrollPane.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
-        scrollPane.setBorder(BorderFactory.createEmptyBorder());
+    JScrollPane scrollPane = new JScrollPane(contentPanel);
+    scrollPane.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED);
+    scrollPane.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
+    scrollPane.setBorder(BorderFactory.createEmptyBorder());
 
-        setting.add(scrollPane, BorderLayout.CENTER);
+    setting.add(scrollPane, BorderLayout.CENTER);
 
-        // Create two columns that will resize
-        JPanel columnsContainer = new JPanel(new GridLayout(1, 2, 20, 0));
-        columnsContainer.setBackground(KU_WHITE);
-        columnsContainer.setBorder(BorderFactory.createEmptyBorder(15, 20, 15, 20));
+    // Create two columns
+    JPanel columnsContainer = new JPanel(new GridLayout(1, 2, 20, 0));
+    columnsContainer.setBackground(KU_WHITE);
+    columnsContainer.setBorder(BorderFactory.createEmptyBorder(15, 20, 15, 20));
 
-        JPanel firstColumn = new JPanel();
-        firstColumn.setLayout(new BoxLayout(firstColumn, BoxLayout.Y_AXIS));
-        firstColumn.setBackground(KU_WHITE);
+    JPanel firstColumn = new JPanel();
+    firstColumn.setLayout(new BoxLayout(firstColumn, BoxLayout.Y_AXIS));
+    firstColumn.setBackground(KU_WHITE);
 
-        JPanel secondColumn = new JPanel();
-        secondColumn.setLayout(new BoxLayout(secondColumn, BoxLayout.Y_AXIS));
-        secondColumn.setBackground(KU_WHITE);
+    JPanel secondColumn = new JPanel();
+    secondColumn.setLayout(new BoxLayout(secondColumn, BoxLayout.Y_AXIS));
+    secondColumn.setBackground(KU_WHITE);
 
-        columnsContainer.add(firstColumn);
-        columnsContainer.add(secondColumn);
-        contentPanel.add(columnsContainer);
+    columnsContainer.add(firstColumn);
+    columnsContainer.add(secondColumn);
+    contentPanel.add(columnsContainer);
 
-        // Create setting cards with flexible sizing
-        firstColumn.add(createSettingCard("Name", "Your name is how you get recognized"));
-//    creates an invisible, fixed-height component used for adding vertical spacing between components in a container that uses
-        firstColumn.add(Box.createVerticalStrut(20));
-        firstColumn.add(createSettingCard("Phone", "Your phone number for account recovery"));
-        firstColumn.add(Box.createVerticalStrut(20));
-        firstColumn.add(createSettingCard("Password", "Change your account password"));
+    // Create cards with current values
+    firstColumn.add(createSettingCard("Name", "Your name is how you get recognized", currentUser.getName()));
+    firstColumn.add(Box.createVerticalStrut(20));
+    firstColumn.add(createSettingCard("Phone", "Your phone number for account recovery", currentUser.getPhoneNum()));
+    firstColumn.add(Box.createVerticalStrut(20));
+    firstColumn.add(createSettingCard("Password", "Change your account password", currentUser.getPassword())); // INSECURE
 
-        secondColumn.add(createSettingCard("Email", "Your primary email address"));
-        secondColumn.add(Box.createVerticalStrut(20));
-        secondColumn.add(createSettingCard("Address", "Your physical mailing address"));
+    secondColumn.add(createSettingCard("Email", "Your primary email address", currentUser.getEmail()));
+    secondColumn.add(Box.createVerticalStrut(20));
+    secondColumn.add(createSettingCard("Address", "Your physical mailing address", currentUser.getAddress()));
 
-        return setting;
+    return setting;
+}
+
+private JPanel createSettingCard(String title, String description, String currentValue) {
+    JPanel panel = new JPanel();
+    panel.setLayout(new BorderLayout());
+    panel.setBackground(new Color(242, 242, 242));
+    panel.setBorder(BorderFactory.createCompoundBorder(
+            new LineBorder(Color.BLACK, 1, true),
+            BorderFactory.createEmptyBorder(15, 20, 15, 20)
+    ));
+
+    JPanel contentPanel = new JPanel();
+    contentPanel.setLayout(new BoxLayout(contentPanel, BoxLayout.Y_AXIS));
+    contentPanel.setBackground(new Color(242, 242, 242));
+
+    JLabel titleLabel = new JLabel(title);
+    titleLabel.setForeground(KU_GRAY);
+    titleLabel.setFont(new Font("Arial", Font.BOLD, 27));
+    titleLabel.setBorder(new EmptyBorder(0, 0, 5, 0));
+
+    JLabel descLabel = new JLabel(description);
+    descLabel.setForeground(KU_LIGHT_GRAY);
+    descLabel.setFont(new Font("Arial", Font.PLAIN, 16));
+    descLabel.setBorder(new EmptyBorder(0, 0, 5, 0));
+
+    // Current value display
+    JLabel valueLabel = new JLabel(currentValue);
+    valueLabel.setForeground(KU_GRAY);
+    valueLabel.setFont(new Font("Arial", Font.PLAIN, 18));
+    valueLabel.setBorder(new EmptyBorder(0, 0, 10, 0));
+
+    JButton actionButton = new JButton("Change " + title);
+    actionButton.setForeground(KU_WHITE);
+    actionButton.setBackground(KU_BLUE);
+    actionButton.setFont(new Font("Arial", Font.BOLD, 15));
+    actionButton.setBorder(new EmptyBorder(10, 10, 10, 10));
+    actionButton.setAlignmentX(Component.LEFT_ALIGNMENT);
+
+    contentPanel.add(titleLabel);
+    contentPanel.add(descLabel);
+    contentPanel.add(valueLabel);
+    contentPanel.add(actionButton);
+
+    panel.add(contentPanel, BorderLayout.NORTH);
+    panel.add(Box.createVerticalGlue(), BorderLayout.CENTER);
+
+    // Add update functionality
+    actionButton.addActionListener(e -> {
+        showUpdateDialog(settingsPanel);
+        refreshSettingsDisplay();
+    });
+
+    return panel;
+}
+
+private void refreshSettingsDisplay() {
+    JScrollPane scrollPane = (JScrollPane) settingsPanel.getComponent(0);
+    JViewport viewport = scrollPane.getViewport();
+    viewport.removeAll();
+    viewport.add(createSetting());
+    settingsPanel.revalidate();
+    settingsPanel.repaint();
+}
+
+// SECURITY WARNING: This stores passwords in plain text - NEVER do this in real applications
+private void showUpdateDialog(Component parent) {
+    User currentUser = new User(userID);  // assumes constructor loads from DB
+
+    JTextField nameField = new JTextField(currentUser.getName());
+    JTextField emailField = new JTextField(currentUser.getEmail());
+    JTextField addressField = new JTextField(currentUser.getAddress());
+    JTextField phoneField = new JTextField(currentUser.getPhoneNum());
+    JTextField passwordField = new JTextField(currentUser.getPassword()); // INSECURE
+
+    JPanel panel = new JPanel(new GridLayout(5, 2, 5, 5));
+    panel.add(new JLabel("Name:"));
+    panel.add(nameField);
+    panel.add(new JLabel("Email:"));
+    panel.add(emailField);
+    panel.add(new JLabel("Address:"));
+    panel.add(addressField);
+    panel.add(new JLabel("Phone:"));
+    panel.add(phoneField);
+    panel.add(new JLabel("Password:"));
+    panel.add(passwordField);
+
+    int result = JOptionPane.showConfirmDialog(
+        parent,
+        panel,
+        "Update Profile",
+        JOptionPane.OK_CANCEL_OPTION,
+        JOptionPane.PLAIN_MESSAGE
+    );
+
+    if (result == JOptionPane.OK_OPTION) {
+        currentUser.setName(nameField.getText());
+        currentUser.setEmail(emailField.getText());
+        currentUser.setAddress(addressField.getText());
+        currentUser.setPhoneNum(phoneField.getText());
+        currentUser.setPassword(passwordField.getText()); // INSECURE
+        currentUser.updateInDB();
     }
-
-
-
-    private JPanel createSettingCard(String title, String description) {
-        JPanel panel = new JPanel();
-        panel.setLayout(new BorderLayout());
-        panel.setBackground(new Color(242, 242, 242));
-        panel.setBorder(BorderFactory.createCompoundBorder(
-                new LineBorder(new Color(0, 0, 0), 1, true),
-                BorderFactory.createEmptyBorder(15, 20, 15, 20)
-        ));
-
-        JPanel contentPanel = new JPanel();
-        contentPanel.setLayout(new BoxLayout(contentPanel, BoxLayout.Y_AXIS));
-        contentPanel.setBackground(new Color(242, 242, 242));
-
-        JLabel titleLabel = new JLabel(title);
-        titleLabel.setForeground(KU_GRAY);
-        titleLabel.setFont(new Font("Arial", Font.BOLD, 27));
-        titleLabel.setBorder(new EmptyBorder(0, 0, 5, 0));
-
-        JLabel descLabel = new JLabel(description);
-        descLabel.setForeground(KU_LIGHT_GRAY);
-        descLabel.setFont(new Font("Arial", Font.PLAIN, 16));
-        descLabel.setBorder(new EmptyBorder(0, 0, 20, 0));
-
-        JButton actionButton = new JButton("Change " + title);
-        actionButton.setForeground(KU_WHITE);
-        actionButton.setBackground(KU_BLUE);
-        actionButton.setFont(new Font("Arial", Font.BOLD, 15));
-        actionButton.setBorder(new EmptyBorder(10, 10, 10, 10));
-        actionButton.setAlignmentX(Component.LEFT_ALIGNMENT);
-
-        contentPanel.add(titleLabel);
-        contentPanel.add(descLabel);
-        contentPanel.add(actionButton);
-
-        panel.add(contentPanel, BorderLayout.NORTH);
-        panel.add(Box.createVerticalGlue(), BorderLayout.CENTER);
-        actionButton.addActionListener(e -> showUpdateDialog(null));
-
-        return panel;
-    }
+}
 
 
 
 
 
-    public void showUpdateDialog(Component parent) {
+    public void showUpdateDialog(JPanel parent) {
         try {
             // Load the current user object from DB
             User currentUser = new User(userID);  // assumes constructor loads from DB
