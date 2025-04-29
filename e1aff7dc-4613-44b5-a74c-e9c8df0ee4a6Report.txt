@@ -1,0 +1,29 @@
+Progress Report for User: mohamed@gmail.com
+User ID: e1aff7dc-4613-44b5-a74c-e9c8df0ee4a6
+Total Transcation: 6
+
+User Transaction:
+Income: 
+Transcation ID: 11 	 TransactionType: income 
+ Transaction Amount: 500.0 
+ Transaction Source/Income: Allowance
+Transcation ID: 12 	 TransactionType: income 
+ Transaction Amount: 2000.0 
+ Transaction Source/Income: 
+Transcation ID: 13 	 TransactionType: income 
+ Transaction Amount: 1250.0 
+ Transaction Source/Income: job
+
+Income: 
+Transcation ID: 9 	 TransactionType: expense 
+ Transaction Amount: 100.0 
+ Transaction Source/Income: 
+Transcation ID: 14 	 TransactionType: expense 
+ Transaction Amount: 200.0 
+ Transaction Source/Income: 
+Transcation ID: 15 	 TransactionType: expense 
+ Transaction Amount: 25000.0 
+ Transaction Source/Income: 
+
+
+Thank you for using the KU Budget!
