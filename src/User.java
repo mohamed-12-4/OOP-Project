@@ -203,14 +203,15 @@ public class User extends Account {
     }
 
     public void updateInDB() {
-        String query = "UPDATE users SET name = ?, email = ?, address = ?, phone = ? WHERE id = ?";
+        String query = "UPDATE users SET name = ?, email = ?, address = ?, phone = ?, password = ? WHERE id = ?";
         try (Connection conn = NeonDBConnection.getConnection()){;
              PreparedStatement ps = conn.prepareStatement(query);
              ps.setString(1, name);
              ps.setString(2, email);
              ps.setString(3, address);
              ps.setString(4, phoneNum);
-             ps.setObject(5, id);
+             ps.setObject(6, id);
+             ps.setString(5, password);
 
              ps.executeUpdate();
 

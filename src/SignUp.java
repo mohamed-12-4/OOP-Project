@@ -9,6 +9,7 @@ import java.sql.Connection;
 import java.sql.Date;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
+import java.util.UUID;
 
 public class SignUp extends JFrame implements ActionListener {
     // Constants for frame dimensions and colors
@@ -138,9 +139,9 @@ public class SignUp extends JFrame implements ActionListener {
         error.setAlignmentX(Component.CENTER_ALIGNMENT); // Center align the panel
         error.setVisible(false);
 
-        JLabel errorMessage = new JLabel("Please enter correct credentials. Password is case-sensitive.");
+        JLabel errorMessage = new JLabel("The password should be more than 8 in length, and email should be in the correct format");
         errorMessage.setForeground(KU_RED);
-        errorMessage.setFont(new Font("Arial", Font.PLAIN, 14)); // Set font and size
+        errorMessage.setFont(new Font("Arial", Font.PLAIN, 9)); // Set font and size
         error.add(errorMessage);
 
 
@@ -359,17 +360,19 @@ public class SignUp extends JFrame implements ActionListener {
                 error.setVisible(true);
             }
             else {
-                String query = "INSERT INTO users (name, email, phone, address, password, type) " +
-                        "VALUES (?, ?, ?, ?, ?, ?, 'user')";
+                String query = "INSERT INTO users (id, name, email, phone, address, password, type) " +
+                        "VALUES (?,?, ?, ?, ?, ?, 'user')";
                 try (Connection conn = NeonDBConnection.getConnection();
                      PreparedStatement ps = conn.prepareStatement(query)) {
 
+                    UUID id = UUID.randomUUID();
 
-                    ps.setString(1, name);
-                    ps.setString(2, email);
-                    ps.setString(3, phone);
-                    ps.setString(4,  address);
-                    ps.setString(5, password);
+                    ps.setObject(1, id);
+                    ps.setString(2, name);
+                    ps.setString(3, email);
+                    ps.setString(4, phone);
+                    ps.setString(5,  address);
+                    ps.setString(6, password);
                     ps.execute();
 
 

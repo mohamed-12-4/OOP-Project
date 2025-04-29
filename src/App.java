@@ -4,6 +4,9 @@ import javax.swing.table.*;
 import java.awt.*;
 import java.awt.event.*;
 import java.io.*;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.SQLException;
 import java.text.*;
 import java.util.*;
 import java.util.List;
@@ -45,9 +48,9 @@ public class App extends JFrame {
     private JPanel settingsPanel;
 
     // Model data
-    private double totalIncome = 0;
+    private double totalIncome = Transaction.getTotalIncome(userID);
     private double plannedExpenses = 0;
-    private double actualExpenses = 0;
+    private double actualExpenses = Transaction.getTotalIncome(userID);
 
     private DefaultListModel<String> reportsListModel;
     private JList<String> reportsList;
@@ -900,7 +903,7 @@ public class App extends JFrame {
         // Load transactions from DB
         ArrayList<Transaction> transactions = Transaction.getTransactions(userId);
         for (Transaction tx : transactions) {
-            String formattedAmount = (tx.getType().equals("income") ? "+" : "-") + "$" + String.format("%.2f", tx.getAmount());
+            String formattedAmount = (tx.getType().toLowerCase().equals("income") ? "+" : "-") + "$" + String.format("%.2f", tx.getAmount());
             String merchant = tx.getType().equals("income") ? tx.getSource() : tx.getDescription();
             JPanel transactionPanel = createTransactionItem(tx.getDate().toString(), merchant, tx.getCategory(), formattedAmount);
             transactionListPanel.add(transactionPanel);
@@ -1062,12 +1065,192 @@ public class App extends JFrame {
 
         panel.add(contentPanel, BorderLayout.NORTH);
         panel.add(Box.createVerticalGlue(), BorderLayout.CENTER);
+        actionButton.addActionListener(e -> showUpdateDialog(null));
 
         return panel;
     }
 
 
 
+
+
+    public void showUpdateDialog(Component parent) {
+        // Create input fields
+        JTextField nameField = new JTextField();
+        JTextField emailField = new JTextField();
+        JTextField addressField = new JTextField();
+        JTextField phoneField = new JTextField();
+        JPasswordField passwordField = new JPasswordField();
+        JTextField idField = new JTextField();
+    
+        // Create panel with input layout
+        JPanel panel = new JPanel(new GridLayout(6, 2, 5, 5));
+        panel.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
+    
+        panel.add(new JLabel("Name:"));
+        panel.add(nameField);
+        panel.add(new JLabel("Email:"));
+        panel.add(emailField);
+        panel.add(new JLabel("Address:"));
+        panel.add(addressField);
+        panel.add(new JLabel("Phone:"));
+        panel.add(phoneField);
+        panel.add(new JLabel("Password:"));
+        panel.add(passwordField);
+    
+        int result = JOptionPane.showConfirmDialog(
+            parent,
+            panel,
+            "Update User Data",
+            JOptionPane.OK_CANCEL_OPTION,
+            JOptionPane.PLAIN_MESSAGE
+        );
+    
+        if (result == JOptionPane.OK_OPTION) {
+            try {
+                // Get and validate values
+                String name = nameField.getText().trim();
+                String email = emailField.getText().trim();
+                String address = addressField.getText().trim();
+                String phone = phoneField.getText().trim();
+                char[] passwordChars = passwordField.getPassword();
+                String password = new String(passwordChars);
+    
+                // Clear sensitive data from memory
+                Arrays.fill(passwordChars, ' ');
+    
+                // Validation
+                if (name.isEmpty() || email.isEmpty() || address.isEmpty() || phone.isEmpty()) {
+                    throw new IllegalArgumentException("All fields must be filled");
+                }
+    
+                if (password.isEmpty()) {
+                    throw new IllegalArgumentException("Password cannot be empty");
+                }
+    
+                if (!email.matches("^[A-Za-z0-9+_.-]+@[A-Za-z0-9.-]+$")) {
+                    throw new IllegalArgumentException("Invalid email format");
+                }
+    
+                // Update user object
+                User updateUser = new User(userID);
+                updateUser.setName(name);
+                updateUser.setEmail(email);
+                updateUser.setAddress(address);
+                updateUser.setPhoneNum(phone);
+                updateUser.setPassword(password);  // Add this setter in User class
+    
+                updateUser.updateInDB();
+                JOptionPane.showMessageDialog(parent, "Update successful!");
+    
+            } catch (NumberFormatException e) {
+                JOptionPane.showMessageDialog(parent, "Invalid ID format", "Error", JOptionPane.ERROR_MESSAGE);
+            } catch (IllegalArgumentException e) {
+                JOptionPane.showMessageDialog(parent, e.getMessage(), "Input Error", JOptionPane.ERROR_MESSAGE);
+            } catch (Exception e) {
+                JOptionPane.showMessageDialog(parent, "Update failed: " + e.getMessage(), 
+                                          "Database Error", JOptionPane.ERROR_MESSAGE);
+            }
+        }
+    }
+
+
+
+
+
+
+
+
+/*
+    private void handleSettingChange(String settingType) {
+        switch (settingType) {
+            case "Email":
+                changeEmail();
+                break;
+            case "Password":
+                changePassword();
+                break;
+            // Add cases for other settings if needed
+        }
+    }
+
+    private void changeEmail() {
+        String newEmail = JOptionPane.showInputDialog(null, "Enter new email:");
+        if (newEmail != null && !newEmail.trim().isEmpty()) {
+            if (isValidEmail(newEmail)) {
+                updateEmailInDatabase(newEmail);
+            } else {
+                JOptionPane.showMessageDialog(panel, "Invalid email format", "Error", JOptionPane.ERROR_MESSAGE);
+            }
+        }
+
+        private boolean isValidEmail(String email) {
+            return email.matches("^[A-Za-z0-9+_.-]+@[A-Za-z0-9.-]+$");
+        }
+
+        
+private void changePassword() {
+    JPasswordField currentPassField = new JPasswordField();
+    JPasswordField newPassField = new JPasswordField();
+    JPasswordField confirmPassField = new JPasswordField();
+
+    JPanel panel = new JPanel(new GridLayout(0, 1));
+    panel.add(new JLabel("Current Password:"));
+    panel.add(currentPassField);
+    panel.add(new JLabel("New Password:"));
+    panel.add(newPassField);
+    panel.add(new JLabel("Confirm New Password:"));
+    panel.add(confirmPassField);
+
+    int result = JOptionPane.showConfirmDialog(
+        null, panel, "Change Password", JOptionPane.OK_CANCEL_OPTION);
+
+    if (result == JOptionPane.OK_OPTION) {
+        char[] newPass = newPassField.getPassword();
+        char[] confirmPass = confirmPassField.getPassword();
+        
+        if (Arrays.equals(newPass, confirmPass)) {
+            updatePasswordInDatabase(new String(newPass));
+        } else {
+            JOptionPane.showMessageDialog(panel, "Passwords don't match", "Error", JOptionPane.ERROR_MESSAGE);
+        }
+    }
+}
+
+private boolean isValidEmail(String email) {
+    return email.matches("^[\\w-.]+@([\\w-]+\\.)+[\\w-]{2,4}$");
+}
+
+private void updateEmailInDatabase(String newEmail) {
+    try (Connection connection = NeonDB.getConnection()) {
+        String sql = "UPDATE users SET email = ? WHERE user_id = ?";
+        try (PreparedStatement pstmt = connection.prepareStatement(sql)) {
+            pstmt.setString(1, newEmail);
+            pstmt.setInt(2, currentUserId); // You need to have current user ID
+            pstmt.executeUpdate();
+            JOptionPane.showMessageDialog(null, "Email updated successfully!");
+        }
+    } catch (SQLException ex) {
+        JOptionPane.showMessageDialog(null, "Error updating email: " + ex.getMessage(), 
+            "Database Error", JOptionPane.ERROR_MESSAGE);
+    }
+}
+
+private void updatePasswordInDatabase(String newPassword) {
+    try (Connection connection = NeonDB.getConnection()) {
+        String sql = "UPDATE users SET password = ? WHERE user_id = ?";
+        try (PreparedStatement pstmt = connection.prepareStatement(sql)) {
+            pstmt.setString(1, newPassword); // Plain text storage (INSECURE)
+            pstmt.setInt(2, currentUserId);
+            pstmt.executeUpdate();
+            JOptionPane.showMessageDialog(null, "Password updated successfully!");
+        }
+    } catch (SQLException ex) {
+        JOptionPane.showMessageDialog(null, "Error updating password: " + ex.getMessage(), 
+            "Database Error", JOptionPane.ERROR_MESSAGE);
+    }
+}
+ */
 
 
 }

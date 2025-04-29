@@ -210,9 +210,9 @@ public class SignIn extends JFrame implements ActionListener {
         error.setAlignmentX(Component.CENTER_ALIGNMENT); // Center align the panel
         error.setVisible(false);
 
-        JLabel errorMessage = new JLabel("Please enter correct credentials. Password is case-sensitive.");
+        JLabel errorMessage = new JLabel("Either the password wrong or email!");
         errorMessage.setForeground(KU_RED);
-        errorMessage.setFont(new Font("Arial", Font.PLAIN, 16)); // Set font and size
+        errorMessage.setFont(new Font("Arial", Font.PLAIN, 18)); // Set font and size
         error.add(errorMessage);
 
 
