@@ -353,7 +353,9 @@ public class SignUp extends JFrame implements ActionListener {
             String address = addressInput.getText();
             String phone = phoneInput.getText();
             String password = passwordInput.getText();
-            if((email.trim().isEmpty() || email.equals("Email Address")||email.matches("^[A-Za-z0-9+_.-]+@[A-Za-z0-9.-]+$")) || (name.trim().isEmpty()|| name.equals("Name")) || (address.trim().isEmpty() || address.equals("Address"))|| (phone.trim().isEmpty()|| phone.equals("Phone")||phone.matches("\\d{10,13}")) || (password.trim().isEmpty() || password.equals("Password")||(password.length() < 8))) {
+            if((email.trim().isEmpty() || email.equals("Email Address")) || (name.trim().isEmpty()|| name.equals("Name")) || (address.trim().isEmpty() || address.equals("Address"))|| (phone.trim().isEmpty()|| phone.equals("Phone")) || (password.trim().isEmpty() || password.equals("Password"))) {
+            error.setVisible(true);
+            } else if((!email.matches("^[A-Za-z0-9+_.-]+@[A-Za-z0-9.-]+$"))||password.length()<8){
                 error.setVisible(true);
             }
             else {
