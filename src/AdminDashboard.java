@@ -140,6 +140,8 @@ public class AdminDashboard extends JFrame {
             });
         }
     }
+
+
     private void deleteTransaction() {
         int row = transactionsTable.getSelectedRow();
         if (row < 0) {
@@ -234,16 +236,14 @@ public class AdminDashboard extends JFrame {
         JPanel p = new JPanel(new FlowLayout(FlowLayout.CENTER, 10, 10));
         p.setBackground(Color.WHITE);
 
-        JButton approve = makeButton("Approve", new Color(40, 167, 69));
-        JButton reject  = makeButton("Reject",  new Color(220, 53, 69));
+
         JButton edit    = makeButton("Edit",    new Color(255, 193, 7));
         JButton del     = makeButton("Delete",  new Color(108, 117, 125));
         JButton search  = makeButton("Search",  new Color(0, 123, 255));
         JButton addTransaction = makeButton("+ Transaction", new Color(0, 204, 102));
         JButton addBudget = makeButton("+ Budget", new Color(102, 153, 255));
 
-        approve.addActionListener(e -> changeApproval("Approved"));
-        reject .addActionListener(e -> changeApproval("Rejected"));
+
         edit   .addActionListener(e -> editUser());
         del    .addActionListener(e -> deleteUser());
         search .addActionListener(e -> searchUser());
@@ -253,7 +253,7 @@ public class AdminDashboard extends JFrame {
 
 
 
-        for (JButton b : Arrays.asList(approve, reject, edit, del, search, addTransaction, addBudget)) {
+        for (JButton b : Arrays.asList(edit, del, search, addTransaction, addBudget)) {
             p.add(b);
         }
         return p;
@@ -338,14 +338,67 @@ public class AdminDashboard extends JFrame {
             }
         }
     }
+    private void searchBudgetByStatus() {
+        String[] options = {"Pending", "Approved", "Rejected"};
+        String choice = (String) JOptionPane.showInputDialog(
+                this,
+                "Select budget approval status to filter:",
+                "Search Budgets",
+                JOptionPane.QUESTION_MESSAGE,
+                null,
+                options,
+                options[0]
+        );
+
+        if (choice == null) return;
+
+        for (int i = 0; i < budgetTableModel.getRowCount(); i++) {
+            String status = budgetTableModel.getValueAt(i, 6).toString(); // Assuming Approval is column 6
+            if (status.equalsIgnoreCase(choice)) {
+                budgetTable.setRowSelectionInterval(i, i);
+                budgetTable.scrollRectToVisible(budgetTable.getCellRect(i, 0, true));
+                return;
+            }
+        }
+
+        JOptionPane.showMessageDialog(this, "No budget found with status: " + choice);
+    }
+
+    private void approveSelectedBudget() {
+        int row = budgetTable.getSelectedRow();
+        if (row < 0) {
+            JOptionPane.showMessageDialog(this, "Select a budget.");
+            return;
+        }
+
+        UUID userId = UUID.fromString(budgetTableModel.getValueAt(row, 0).toString());
+        String category = budgetTableModel.getValueAt(row, 1).toString();
+        Budget.setApprovalStatusForBudget(userId, category, "Approved");
+        refreshBudgetTable();
+    }
+
+    private void rejectSelectedBudget() {
+        int row = budgetTable.getSelectedRow();
+        if (row < 0) {
+            JOptionPane.showMessageDialog(this, "Select a budget.");
+            return;
+        }
+
+        UUID userId = UUID.fromString(budgetTableModel.getValueAt(row, 0).toString());
+        String category = budgetTableModel.getValueAt(row, 1).toString();
+        Budget.setApprovalStatusForBudget(userId, category, "Rejected");
+        refreshBudgetTable();
+    }
 
 
     private JPanel createBudgetsPanel() {
         JPanel p = new JPanel(new BorderLayout());
-        p.setBorder(BorderFactory.createEmptyBorder(20,20,20,20));
+        p.setBorder(BorderFactory.createEmptyBorder(20, 20, 20, 20));
         p.setBackground(Color.WHITE);
 
-        String[] cols = {"User ID","Category","Planned","Spent","Remaining","Budget Status","Approval Status"};
+        String[] cols = {
+                "User ID", "Category", "Planned", "Spent", "Remaining", "Budget Status", "Approval Status"
+        };
         budgetTableModel = new DefaultTableModel(cols, 0) {
             @Override
             public Class<?> getColumnClass(int column) {
@@ -353,14 +406,52 @@ public class AdminDashboard extends JFrame {
                 return String.class;
             }
             @Override
-            public boolean isCellEditable(int row, int column) { return false; }
+            public boolean isCellEditable(int row, int column) {
+                return false;
+            }
         };
         budgetTable = new JTable(budgetTableModel);
         budgetTable.setRowHeight(30);
         budgetTable.setFont(new Font("Arial", Font.PLAIN, 14));
-
         refreshBudgetTable();
+
         p.add(new JScrollPane(budgetTable), BorderLayout.CENTER);
+
+        // Action Panel
+        JPanel actionPanel = new JPanel(new FlowLayout(FlowLayout.CENTER, 10, 10));
+        actionPanel.setBackground(Color.WHITE);
+
+        JButton approve = makeButton("Approve", new Color(40, 167, 69));
+        JButton reject  = makeButton("Reject",  new Color(220, 53, 69));
+
+
+        // Attach existing actions
+        approve.addActionListener(e -> {
+            if (budgetTable.isShowing()) {
+                approveSelectedBudget();
+            } else {
+                changeApproval("Approved");
+            }
+        });
+
+        reject.addActionListener(e -> {
+            if (budgetTable.isShowing()) {
+                rejectSelectedBudget();
+            } else {
+                changeApproval("Rejected");
+            }
+        });
+
+
+        // Add to panel
+        for (JButton btn : Arrays.asList(
+                approve, reject
+        )) {
+            actionPanel.add(btn);
+        }
+
+        p.add(actionPanel, BorderLayout.SOUTH); // ✅ Add action panel to bottom
+
         return p;
     }
 

@@ -87,6 +87,8 @@ public class Budget {
         return count;
     }
 
+
+
     public static void setApprovalStatusForUser(UUID userId, String newStatus) {
         String query = "UPDATE budget SET pending = '" + newStatus + "' WHERE user_Id = '" + userId + "'";
         try (Connection conn = NeonDBConnection.getConnection();
@@ -99,6 +101,21 @@ public class Budget {
             e.printStackTrace();
         }
     }
+
+    public static void setApprovalStatusForBudget(UUID userId, String category, String status) {
+        try (Connection conn = NeonDBConnection.getConnection()) {
+            PreparedStatement stmt = conn.prepareStatement(
+                    "UPDATE budget SET pending = ? WHERE user_id = ? AND category = ?");
+            stmt.setString(1, status);
+            stmt.setObject(2, userId);
+            stmt.setString(3, category);
+            stmt.executeUpdate();
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+    }
+
+
 
     public UUID getBudgetId() { return budgetId; }
     public UUID getUserId() { return userId; }
