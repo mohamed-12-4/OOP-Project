@@ -278,9 +278,22 @@ public class App extends JFrame {
         settingsPanel = createSetting();
         cardPanel.add(settingsPanel, "Settings");
 
+
+
+        JButton logout = new JButton("Logout");
+        logout.setForeground(KU_WHITE); // Set text color
+        logout.setBackground(KU_BLUE); // Set background color
+        logout.addActionListener(e -> {
+            new SignUp();
+            this.dispose();
+        });
+        
+
+
         // Add header and card panel to main panel
         mainPanel.add(headerPanel, BorderLayout.NORTH);
         mainPanel.add(cardPanel, BorderLayout.CENTER);
+        mainPanel.add(logout, BorderLayout.SOUTH);
     }
 
     private JPanel createDashboardPanel(User user) {
@@ -1319,7 +1332,9 @@ private void showUpdateDialog(Component parent) {
 
 
 
+    public void actionPerformed(ActionEvent e) {
 
+    }
 
 
 
