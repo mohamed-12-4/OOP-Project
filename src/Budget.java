@@ -176,12 +176,10 @@ public class Budget {
                 double actualSpent = rs.getDouble("actual_spent");
                 double remainingAmount = rs.getDouble("remaining_amount");
                 String status = rs.getString("status");
+                String approvalStatus = rs.getString("pending");
 
-                Budget b = new Budget(userId, category, setAmount);
-                b.budgetId = budgetId;
-                b.actualSpent = actualSpent;
-                b.remainingAmount = remainingAmount;
-                b.status = status;
+                Budget b = new Budget(budgetId);
+
 
                 budgets.add(b);
             }
@@ -223,6 +221,21 @@ public class Budget {
             ps.setString(5, category);
             ps.executeUpdate();
         } catch (SQLException e) {
+            e.printStackTrace();
+        }
+    }
+
+    public void updateInDb(String category, double setAmount) {
+        String query = "UPDATE budget SET category = ?, set_amount = ? WHERE budget_id = ?";
+        try {
+            Connection conn = NeonDBConnection.getConnection();
+            PreparedStatement ps = conn.prepareStatement(query);
+            ps.setString(1, category);
+            ps.setDouble(2, setAmount);
+            ps.setObject(3, budgetId);
+            ps.executeUpdate();
+        }
+        catch (SQLException e) {
             e.printStackTrace();
         }
     }

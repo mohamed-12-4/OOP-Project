@@ -1,3 +1,5 @@
+import java.io.File;
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
@@ -48,31 +50,41 @@ public class User extends Account {
         }
     }
 
-     public void progressReport() {
-        String fileName = this.id + "Report.txt"; 
+    public void progressReport() {
+        String reportsDirPath = "reports/" + this.id; // User-specific folder
+        File reportsDir = new File(reportsDirPath);
+
+        if (!reportsDir.exists()) {
+            reportsDir.mkdirs(); // Create directory if it doesn't exist
+        }
+
+        String now = LocalDate.now().toString();
+
+        String fileName = reportsDirPath + "/" + now + "Report.txt"; // Correct path
         try (PrintWriter writer = new PrintWriter(new FileWriter(fileName))) {
             writer.println("Progress Report for User: " + getEmail());
             writer.println("User ID: " + this.id);
-            writer.println("Total Transcation: " + Transaction.getAllTransactions().size());
-            writer.println("\nUser Transaction:");
-            StringBuilder income = new StringBuilder("Income: \n");
-            StringBuilder expense = new StringBuilder("Income: \n");
+            writer.println("Total Transactions: " + Transaction.getAllTransactions().size());
+            writer.println("\nUser Transactions:");
 
-            
-            for(Transaction trans: Transaction.getAllTransactions()){
-                if (trans.getType().toLowerCase().equals("income")) {
-                    income.append(trans + "\n");
-                } else{
-                    expense.append(trans + "\n");
+            StringBuilder income = new StringBuilder("Income:\n");
+            StringBuilder expense = new StringBuilder("Expense:\n");
+
+
+            for (Transaction trans : Transaction.getAllTransactions()) {
+                if (trans.getType().equalsIgnoreCase("income")) {
+                    income.append(trans).append("\n");
+                } else {
+                    expense.append(trans).append("\n");
 
                 }
-                
             }
-    
+
             writer.println(income);
             writer.println(expense);
             writer.println("\nThank you for using the KU Budget!");
-            System.out.println("Progress report saved as: " + fileName); 
+
+            System.out.println("Progress report saved as: " + fileName);
         } catch (IOException e) {
             System.err.println("Error generating progress report: " + e.getMessage());
         }

@@ -484,8 +484,7 @@ public class App extends JFrame {
 
                 Transaction tx = new Transaction(userId, type, amount, date, category, source, description);
                 Transaction.addTransaction(tx);
-                this.dispose();
-                new App(new User(userId));
+                refreshTransactionList(userId);
 
                 JOptionPane.showMessageDialog(parent, "Transaction added successfully!", "Success", JOptionPane.INFORMATION_MESSAGE);
             } catch (Exception ex) {
@@ -686,7 +685,10 @@ public class App extends JFrame {
         budgetHeaderPanel.add(addCategoryButton, BorderLayout.EAST);
 
         // Table column headers
-        String[] columnNames = {"Category", "Planned", "Spent", "Remaining", "Progress"};
+        String[] columnNames = {
+                "Category", "Planned", "Spent", "Remaining", "Progress", "Status", "Approval"
+        };
+
 
         ArrayList<Budget> budgets = Budget.getBudgetsForUser(userID);
         List<Object[]> rowData = new ArrayList<>();
@@ -700,7 +702,9 @@ public class App extends JFrame {
                     b.getSetAmount(),
                     b.getActualSpent(),
                     b.getRemainingAmount(),
-                    progress
+                    progress,
+                    b.getStatus(),
+                    b.getApprovalStatus()
             });
         }
         Object[][] data = rowData.toArray(new Object[0][]);
@@ -717,7 +721,7 @@ public class App extends JFrame {
 
             @Override
             public boolean isCellEditable(int row, int column) {
-                return column == 1; // Only make the "Planned" column editable
+                return column == 1 || column == 0; // Only make the "Planned" column editable
             }
         };
 
@@ -772,6 +776,32 @@ public class App extends JFrame {
 
         budgetPanel.add(budgetHeaderPanel, BorderLayout.NORTH);
         budgetPanel.add(tableScrollPane, BorderLayout.CENTER);
+
+        budgetTableModel.addTableModelListener(e -> {
+            int row = e.getFirstRow();
+            int col = e.getColumn();
+
+            if (col == 1 || col == 0) {  // Planned column
+                String category = (String) budgetTableModel.getValueAt(row, 0);
+                Object newValue = budgetTableModel.getValueAt(row, 1);
+
+                try {
+                    double newPlannedAmount = Double.parseDouble(newValue.toString());
+
+                    // Find the corresponding Budget object
+                    for (Budget b : budgets) {
+                        if (b.getCategory().equals(category)) {
+                            b.updateInDb(category, newPlannedAmount);
+                            JOptionPane.showMessageDialog(budgetPanel, "Budget updated for category: " + category);
+                            break;
+                        }
+                    }
+
+                } catch (Exception ex) {
+                    JOptionPane.showMessageDialog(budgetPanel, "Invalid number format", "Error", JOptionPane.ERROR_MESSAGE);
+                }
+            }
+        });
     }
     public static void showAddBudgetDialog(JFrame parent, UUID userId) {
         JPanel panel = new JPanel(new GridBagLayout());
