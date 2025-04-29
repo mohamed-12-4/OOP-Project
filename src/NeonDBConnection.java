@@ -1,6 +1,5 @@
-import java.sql.Connection;
-import java.sql.DriverManager;
-import java.sql.SQLException;
+import java.sql.*;
+import java.util.UUID;
 
 class NeonDBConnection {
     // Replace the placeholders with your actual Neon DB credentials.
@@ -17,5 +16,22 @@ class NeonDBConnection {
             e.printStackTrace();
         }
         return DriverManager.getConnection(CONNECTION_URL);
+    }
+    public static void main(String[] args) {
+        double total = 0;
+        String query = "SELECT SUM(amount) FROM transactions WHERE type='expense' AND user_id = ?" ;
+        try (Connection conn = NeonDBConnection.getConnection();
+             PreparedStatement ps = conn.prepareStatement(query)) {
+
+
+            ResultSet rs = ps.executeQuery();
+            while (rs.next()) {
+                total += rs.getDouble(1);
+            }
+
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        System.out.println(total);
     }
 }

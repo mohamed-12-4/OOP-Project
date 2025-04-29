@@ -69,7 +69,7 @@ public class Transaction {
             ps.setObject(1, id);
             ResultSet rs = ps.executeQuery();
             while (rs.next()) {
-                total = rs.getDouble(1);
+                total += rs.getDouble(1);
             }
 
         } catch (SQLException e) {
@@ -88,7 +88,7 @@ public class Transaction {
             ps.setObject(1, id);
             ResultSet rs = ps.executeQuery();
             while (rs.next()) {
-                total = rs.getDouble(1);
+                total += rs.getDouble(1);
             }
 
         } catch (SQLException e) {

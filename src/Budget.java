@@ -135,6 +135,29 @@ public class Budget {
     }
 
     // Update actual spent based on user's expenses in this category
+    public static double planedForUser(UUID userId) {
+        double planned = 0;
+        String query = "SELECT SUM(set_amount) FROM budget WHERE user_id = ?";
+
+        try {
+
+            Connection conn = NeonDBConnection.getConnection();
+            PreparedStatement ps = conn.prepareStatement(query);
+
+            ps.setObject(1, userId);
+            ResultSet rs = ps.executeQuery();
+
+            while (rs.next()) {
+                planned += rs.getDouble(1);
+            }
+
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+
+        return planned;
+
+    }
 
     public static ArrayList<Budget> getBudgetsForUser(UUID userId) {
         ArrayList<Budget> budgets = new ArrayList<>();

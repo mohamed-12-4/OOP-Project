@@ -48,9 +48,7 @@ public class App extends JFrame {
     private JPanel settingsPanel;
 
     // Model data
-    private double totalIncome = Transaction.getTotalIncome(userID);
-    private double plannedExpenses = 0;
-    private double actualExpenses = Transaction.getTotalIncome(userID);
+
 
     private DefaultListModel<String> reportsListModel;
     private JList<String> reportsList;
@@ -523,6 +521,9 @@ public class App extends JFrame {
         summaryPanel.setBackground(KU_WHITE);
         summaryPanel.setMaximumSize(new Dimension(Integer.MAX_VALUE, 120));
         summaryPanel.setAlignmentX(Component.LEFT_ALIGNMENT);
+        double totalIncome = Transaction.getTotalIncome(userID);
+        double plannedExpenses = Budget.planedForUser(userID);
+        double actualExpenses = Transaction.getTotalExpenses(userID);
 
         // Income summary card
         JPanel incomePanel = createSummaryCard("Income", totalIncome, totalIncome, KU_BLUE);
