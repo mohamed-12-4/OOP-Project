@@ -251,4 +251,13 @@ public class Budget {
             e.printStackTrace();
         }
     }
+
+    @Override
+    public String toString() {
+        return  "Category:" + category + ", Set Amount:"
+                + setAmount + ", Actual Spent:" + actualSpent + ", Remaining Amount:" + remainingAmount + ", Status:"
+                + status + ", Approval Status:" + approvalStatus ;
+    }
+
+    
 }
