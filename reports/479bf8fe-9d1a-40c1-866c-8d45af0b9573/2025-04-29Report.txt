@@ -1,0 +1,31 @@
+Progress Report for User: tarekalhafez1@gmail.com
+User ID: 479bf8fe-9d1a-40c1-866c-8d45af0b9573
+Total Transactions: 6
+
+User Transactions:
+Budget [budgetId=null, userId=479bf8fe-9d1a-40c1-866c-8d45af0b9573, category=Entertainment, setAmount=12.0, actualSpent=0.0, remainingAmount=12.0, status=Under Budget, approvalStatus=Rejected]
+Budget [budgetId=null, userId=479bf8fe-9d1a-40c1-866c-8d45af0b9573, category=Utilities, setAmount=20000.0, actualSpent=25000.0, remainingAmount=-5000.0, status=Over Budget, approvalStatus=Rejected]
+Income:
+Transcation ID: 11 	 TransactionType: income 
+ Transaction Amount: 500.0 
+ Transaction Source/Income: Allowance
+Transcation ID: 12 	 TransactionType: income 
+ Transaction Amount: 2000.0 
+ Transaction Source/Income: 
+Transcation ID: 13 	 TransactionType: income 
+ Transaction Amount: 1250.0 
+ Transaction Source/Income: job
+
+Expense:
+Transcation ID: 9 	 TransactionType: expense 
+ Transaction Amount: 100.0 
+ Transaction Source/Income: 
+Transcation ID: 14 	 TransactionType: expense 
+ Transaction Amount: 200.0 
+ Transaction Source/Income: 
+Transcation ID: 15 	 TransactionType: expense 
+ Transaction Amount: 25000.0 
+ Transaction Source/Income: 
+
+
+Thank you for using the KU Budget!

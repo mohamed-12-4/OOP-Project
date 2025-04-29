@@ -64,13 +64,17 @@ public class User extends Account {
         try (PrintWriter writer = new PrintWriter(new FileWriter(fileName))) {
             writer.println("Progress Report for User: " + getEmail());
             writer.println("User ID: " + this.id);
+            //writer.println("Budget Status: "+ Budget.getBudgetsForUser(id));
             writer.println("Total Transactions: " + Transaction.getAllTransactions().size());
             writer.println("\nUser Transactions:");
-
+            
             StringBuilder income = new StringBuilder("Income:\n");
             StringBuilder expense = new StringBuilder("Expense:\n");
 
+            for (Budget budget:  Budget.getBudgetsForUser(id) ){
+                writer.println(budget.toString());
 
+            }
             for (Transaction trans : Transaction.getAllTransactions()) {
                 if (trans.getType().equalsIgnoreCase("income")) {
                     income.append(trans).append("\n");
