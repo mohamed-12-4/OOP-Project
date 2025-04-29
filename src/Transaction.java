@@ -13,6 +13,28 @@ public class Transaction {
     private String source;     // Relevant for income (e.g., salary, allowance); may be null for expenses
     private String description;
 
+    public void setAmount(double amount) {
+        this.amount = amount;
+    }
+    public void setCategory(String category) {
+        this.category = category;
+    }
+    public void setSource(String source) {
+        this.source = source;
+    }
+    public void setDescription(String description) {
+        this.description = description;
+    }
+
+    public void setDate(Date date) {
+        this.date = date;
+    }
+
+    public void setType(String type) {
+        this.type = type;
+    }
+
+
     public Transaction() {}
     public Transaction(int txId) {
         this.transactionId = txId;
@@ -209,6 +231,27 @@ public class Transaction {
         }
         return String.format("Transcation ID: %d \t TransactionType: %s \n Transaction Amount: %.1f \n Transaction Source/Income: %s", transactionId, type, amount, source);
     }
+
+    public void updateInDB() {
+        String query = "UPDATE transactions SET type = ?, amount = ?, date = ?, category = ?, description = ? WHERE id = ?";
+        try (Connection conn = NeonDBConnection.getConnection()){;
+            PreparedStatement ps = conn.prepareStatement(query);
+            ps.setString(1, type);
+            ps.setDouble(2, amount);
+            ps.setDate(3, date);
+            ps.setString(4, category);
+            ps.setObject(5, description);
+            ps.setInt(6, transactionId);
+
+            ps.executeUpdate();
+
+
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+    }
+
+
 }
 
 class Income extends Transaction {}

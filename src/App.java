@@ -7,6 +7,7 @@ import java.io.*;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
+import java.sql.Date;
 import java.text.*;
 import java.util.*;
 import java.util.List;
@@ -364,18 +365,8 @@ public class App extends JFrame {
         JPanel controlsPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT));
         controlsPanel.setBackground(KU_WHITE);
 
-        JButton importButton = new JButton("Import Transactions");
-        importButton.setBackground(KU_BLUE);
-        importButton.setForeground(Color.WHITE);
-        importButton.setFocusPainted(false);
 
-        JButton exportButton = new JButton("Export Transactions");
-        exportButton.setBackground(KU_BLUE);
-        exportButton.setForeground(Color.WHITE);
-        exportButton.setFocusPainted(false);
 
-        controlsPanel.add(importButton);
-        controlsPanel.add(exportButton);
         panel.add(controlsPanel, BorderLayout.SOUTH);
 
         return panel;
@@ -904,9 +895,9 @@ public class App extends JFrame {
         // Load transactions from DB
         ArrayList<Transaction> transactions = Transaction.getTransactions(userId);
         for (Transaction tx : transactions) {
-            String formattedAmount = (tx.getType().toLowerCase().equals("income") ? "+" : "-") + "$" + String.format("%.2f", tx.getAmount());
-            String merchant = tx.getType().equals("income") ? tx.getSource() : tx.getDescription();
-            JPanel transactionPanel = createTransactionItem(tx.getDate().toString(), merchant, tx.getCategory(), formattedAmount);
+
+
+            JPanel transactionPanel = createTransactionItem(tx);
             transactionListPanel.add(transactionPanel);
             transactionListPanel.add(Box.createRigidArea(new Dimension(0, 1)));
             transactionListPanel.add(new JSeparator());
@@ -922,64 +913,149 @@ public class App extends JFrame {
         transactionsPanel.add(transactionsScrollPane, BorderLayout.CENTER);
     }
 
-    private JPanel createTransactionItem(String date, String merchant, String category, String amount) {
+    private JPanel createTransactionItem(Transaction tx) {
         JPanel panel = new JPanel(new BorderLayout());
         panel.setBackground(Color.WHITE);
         panel.setBorder(BorderFactory.createEmptyBorder(10, 5, 10, 5));
         panel.setMaximumSize(new Dimension(Integer.MAX_VALUE, 60));
 
-        // Left side - date and merchant
+        // Left side
         JPanel leftPanel = new JPanel();
         leftPanel.setLayout(new BoxLayout(leftPanel, BoxLayout.Y_AXIS));
         leftPanel.setBackground(Color.WHITE);
 
-        JLabel merchantLabel = new JLabel(merchant);
+        JLabel merchantLabel = new JLabel(tx.getType().equals("income") ? tx.getSource() : tx.getDescription());
         merchantLabel.setFont(new Font("Arial", Font.BOLD, 14));
-        merchantLabel.setAlignmentX(Component.LEFT_ALIGNMENT);
 
-        JLabel dateLabel = new JLabel(date);
+        JLabel dateLabel = new JLabel(tx.getDate().toString());
         dateLabel.setFont(new Font("Arial", Font.PLAIN, 12));
         dateLabel.setForeground(Color.GRAY);
-        dateLabel.setAlignmentX(Component.LEFT_ALIGNMENT);
 
         leftPanel.add(merchantLabel);
         leftPanel.add(Box.createRigidArea(new Dimension(0, 3)));
         leftPanel.add(dateLabel);
 
-        // Right side - category and amount
+        // Right side
         JPanel rightPanel = new JPanel();
         rightPanel.setLayout(new BoxLayout(rightPanel, BoxLayout.Y_AXIS));
         rightPanel.setBackground(Color.WHITE);
 
-        JLabel amountLabel = new JLabel(amount);
+        String formattedAmount = (tx.getType().equalsIgnoreCase("income") ? "+" : "-") + "$" + String.format("%.2f", tx.getAmount());
+        JLabel amountLabel = new JLabel(formattedAmount);
         amountLabel.setFont(new Font("Arial", Font.BOLD, 14));
-        amountLabel.setHorizontalAlignment(JLabel.RIGHT);
-        amountLabel.setAlignmentX(Component.RIGHT_ALIGNMENT);
+        amountLabel.setForeground(tx.getType().equalsIgnoreCase("income") ? SUCCESS_COLOR : KU_RED);
 
-        // Set color based on amount (red for negative, green for positive)
-        if (amount.startsWith("-")) {
-            amountLabel.setForeground(KU_RED);
-        } else {
-            amountLabel.setForeground(SUCCESS_COLOR);
-        }
-
-        JLabel categoryLabel = new JLabel(category);
+        JLabel categoryLabel = new JLabel(tx.getCategory());
         categoryLabel.setFont(new Font("Arial", Font.PLAIN, 12));
         categoryLabel.setForeground(Color.GRAY);
-        categoryLabel.setHorizontalAlignment(JLabel.RIGHT);
-        categoryLabel.setAlignmentX(Component.RIGHT_ALIGNMENT);
 
         rightPanel.add(amountLabel);
         rightPanel.add(Box.createRigidArea(new Dimension(0, 3)));
         rightPanel.add(categoryLabel);
 
-        // Add components to panel
         panel.add(leftPanel, BorderLayout.WEST);
         panel.add(rightPanel, BorderLayout.EAST);
+
+        // Add mouse listener for editing
+        panel.addMouseListener(new MouseAdapter() {
+            @Override
+            public void mouseClicked(MouseEvent e) {
+                if (e.getClickCount() == 2 || SwingUtilities.isRightMouseButton(e)) {
+                    openEditTransactionDialog(tx);
+                }
+            }
+        });
 
         return panel;
     }
 
+    private void openEditTransactionDialog(Transaction tx) {
+        JPanel panel = new JPanel(new GridLayout(0, 2, 10, 10));
+        panel.setBackground(Color.WHITE);
+
+        JTextField amountField = new JTextField(String.valueOf(tx.getAmount()));
+        JTextField dateField = new JTextField(tx.getDate().toString());
+        JTextField categoryField = new JTextField(tx.getCategory());
+        JTextField descriptionField = new JTextField(tx.getDescription());
+        JTextField sourceField = new JTextField(tx.getSource());
+        JComboBox<String> typeBox = new JComboBox<>(new String[]{"income", "expense"});
+        typeBox.setSelectedItem(tx.getType().toLowerCase());
+
+        panel.add(new JLabel("Type:"));
+        panel.add(typeBox);
+        panel.add(new JLabel("Amount:"));
+        panel.add(amountField);
+        panel.add(new JLabel("Date (YYYY-MM-DD):"));
+        panel.add(dateField);
+        panel.add(new JLabel("Category:"));
+        panel.add(categoryField);
+        panel.add(new JLabel("Source:"));
+        panel.add(sourceField);
+        panel.add(new JLabel("Description:"));
+        panel.add(descriptionField);
+
+        int result = JOptionPane.showConfirmDialog(null, panel, "Edit Transaction",
+                JOptionPane.OK_CANCEL_OPTION, JOptionPane.PLAIN_MESSAGE);
+
+        if (result == JOptionPane.OK_OPTION) {
+            try {
+                tx.setType(typeBox.getSelectedItem().toString());
+                tx.setAmount(Double.parseDouble(amountField.getText()));
+                tx.setDate(Date.valueOf(dateField.getText()));
+                tx.setCategory(categoryField.getText());
+                tx.setSource(sourceField.getText());
+                tx.setDescription(descriptionField.getText());
+
+                tx.updateInDB();  // ✅ your existing DB update function
+
+                JOptionPane.showMessageDialog(null, "Transaction updated!");
+                refreshTransactionList(tx.getUserId());  // 🔁 Reload UI
+            } catch (Exception ex) {
+                JOptionPane.showMessageDialog(null, "Invalid input: " + ex.getMessage());
+            }
+        }
+    }
+
+    private void refreshTransactionList(UUID userId) {
+        transactionsPanel.removeAll();
+
+        JPanel transactionsHeaderPanel = new JPanel(new BorderLayout());
+        transactionsHeaderPanel.setBackground(Color.WHITE);
+
+        JLabel transactionsTitle = new JLabel("Recent Transactions");
+        transactionsTitle.setFont(HEADER_FONT);
+
+        JButton viewAllButton = new JButton("View All");
+        viewAllButton.setBackground(Color.WHITE);
+        viewAllButton.setForeground(KU_BLUE);
+        viewAllButton.setBorder(new LineBorder(KU_BLUE, 1, true));
+        viewAllButton.setFocusPainted(false);
+
+        transactionsHeaderPanel.add(transactionsTitle, BorderLayout.WEST);
+        transactionsHeaderPanel.add(viewAllButton, BorderLayout.EAST);
+
+        JPanel transactionListPanel = new JPanel();
+        transactionListPanel.setLayout(new BoxLayout(transactionListPanel, BoxLayout.Y_AXIS));
+        transactionListPanel.setBackground(Color.WHITE);
+
+        ArrayList<Transaction> transactions = Transaction.getTransactions(userId);
+        for (Transaction tx : transactions) {
+            JPanel transactionPanel = createTransactionItem(tx);
+            transactionListPanel.add(transactionPanel);
+            transactionListPanel.add(Box.createRigidArea(new Dimension(0, 1)));
+            transactionListPanel.add(new JSeparator());
+            transactionListPanel.add(Box.createRigidArea(new Dimension(0, 1)));
+        }
+
+        JScrollPane transactionsScrollPane = new JScrollPane(transactionListPanel);
+        transactionsScrollPane.setBorder(BorderFactory.createEmptyBorder());
+
+        transactionsPanel.add(transactionsHeaderPanel, BorderLayout.NORTH);
+        transactionsPanel.add(transactionsScrollPane, BorderLayout.CENTER);
+
+        transactionsPanel.revalidate();
+        transactionsPanel.repaint();
+    }
 
 
     private JPanel createSetting() {
@@ -1030,6 +1106,8 @@ public class App extends JFrame {
         return setting;
     }
 
+
+
     private JPanel createSettingCard(String title, String description) {
         JPanel panel = new JPanel();
         panel.setLayout(new BorderLayout());
@@ -1076,84 +1154,80 @@ public class App extends JFrame {
 
 
     public void showUpdateDialog(Component parent) {
-        // Create input fields
-        JTextField nameField = new JTextField();
-        JTextField emailField = new JTextField();
-        JTextField addressField = new JTextField();
-        JTextField phoneField = new JTextField();
-        JPasswordField passwordField = new JPasswordField();
-        JTextField idField = new JTextField();
-    
-        // Create panel with input layout
-        JPanel panel = new JPanel(new GridLayout(6, 2, 5, 5));
-        panel.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
-    
-        panel.add(new JLabel("Name:"));
-        panel.add(nameField);
-        panel.add(new JLabel("Email:"));
-        panel.add(emailField);
-        panel.add(new JLabel("Address:"));
-        panel.add(addressField);
-        panel.add(new JLabel("Phone:"));
-        panel.add(phoneField);
-        panel.add(new JLabel("Password:"));
-        panel.add(passwordField);
-    
-        int result = JOptionPane.showConfirmDialog(
-            parent,
-            panel,
-            "Update User Data",
-            JOptionPane.OK_CANCEL_OPTION,
-            JOptionPane.PLAIN_MESSAGE
-        );
-    
-        if (result == JOptionPane.OK_OPTION) {
-            try {
-                // Get and validate values
+        try {
+            // Load the current user object from DB
+            User currentUser = new User(userID);  // assumes constructor loads from DB
+
+            // Create input fields and pre-fill with existing values
+            JTextField nameField = new JTextField(currentUser.getName());
+            JTextField emailField = new JTextField(currentUser.getEmail());
+            JTextField addressField = new JTextField(currentUser.getAddress());
+            JTextField phoneField = new JTextField(currentUser.getPhoneNum());
+            JPasswordField passwordField = new JPasswordField(currentUser.getPassword());  // pre-fill password
+
+            // Create panel with input layout
+            JPanel panel = new JPanel(new GridLayout(6, 2, 5, 5));
+            panel.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
+
+            panel.add(new JLabel("Name:"));
+            panel.add(nameField);
+            panel.add(new JLabel("Email:"));
+            panel.add(emailField);
+            panel.add(new JLabel("Address:"));
+            panel.add(addressField);
+            panel.add(new JLabel("Phone:"));
+            panel.add(phoneField);
+            panel.add(new JLabel("Password:"));
+            panel.add(passwordField);
+
+            int result = JOptionPane.showConfirmDialog(
+                    parent,
+                    panel,
+                    "Update User Data",
+                    JOptionPane.OK_CANCEL_OPTION,
+                    JOptionPane.PLAIN_MESSAGE
+            );
+
+            if (result == JOptionPane.OK_OPTION) {
+                // Read values
                 String name = nameField.getText().trim();
                 String email = emailField.getText().trim();
                 String address = addressField.getText().trim();
                 String phone = phoneField.getText().trim();
                 char[] passwordChars = passwordField.getPassword();
                 String password = new String(passwordChars);
-    
-                // Clear sensitive data from memory
-                Arrays.fill(passwordChars, ' ');
-    
-                // Validation
+
+                Arrays.fill(passwordChars, ' '); // clear password from memory
+
+                // Validate
                 if (name.isEmpty() || email.isEmpty() || address.isEmpty() || phone.isEmpty()) {
                     throw new IllegalArgumentException("All fields must be filled");
                 }
-    
-                if (password.isEmpty()) {
-                    throw new IllegalArgumentException("Password cannot be empty");
-                }
-    
+
                 if (!email.matches("^[A-Za-z0-9+_.-]+@[A-Za-z0-9.-]+$")) {
                     throw new IllegalArgumentException("Invalid email format");
                 }
-    
-                // Update user object
-                User updateUser = new User(userID);
-                updateUser.setName(name);
-                updateUser.setEmail(email);
-                updateUser.setAddress(address);
-                updateUser.setPhoneNum(phone);
-                updateUser.setPassword(password);  // Add this setter in User class
-    
-                updateUser.updateInDB();
+
+                if (password.isEmpty()) {
+                    throw new IllegalArgumentException("Password cannot be empty");
+                }
+
+                // Update user
+                currentUser.setName(name);
+                currentUser.setEmail(email);
+                currentUser.setAddress(address);
+                currentUser.setPhoneNum(phone);
+                currentUser.setPassword(password);
+
+                currentUser.updateInDB();
                 JOptionPane.showMessageDialog(parent, "Update successful!");
-    
-            } catch (NumberFormatException e) {
-                JOptionPane.showMessageDialog(parent, "Invalid ID format", "Error", JOptionPane.ERROR_MESSAGE);
-            } catch (IllegalArgumentException e) {
-                JOptionPane.showMessageDialog(parent, e.getMessage(), "Input Error", JOptionPane.ERROR_MESSAGE);
-            } catch (Exception e) {
-                JOptionPane.showMessageDialog(parent, "Update failed: " + e.getMessage(), 
-                                          "Database Error", JOptionPane.ERROR_MESSAGE);
             }
+        } catch (Exception e) {
+            JOptionPane.showMessageDialog(parent, "Failed to load or update user: " + e.getMessage(),
+                    "Error", JOptionPane.ERROR_MESSAGE);
         }
     }
+
 
 
 
